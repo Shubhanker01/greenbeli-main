@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # MongoDB Database Service
+  mongo:
+    image: mongo:7.0
+    container_name: greenbeli_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - greenbeli_net
+
+  # Express Backend Service
+  backend:
+    build:
+      context: ./Nursery-Backend
+      dockerfile: Dockerfile
+    container_name: greenbeli_backend
+    restart: always
+    ports:
+      - "5008:5008"
+    env_file:
+      - ./Nursery-Backend/.env
+    volumes:
+      - ./Nursery-Backend/public/Uploads:/app/public/Uploads
+    depends_on:
+      - mongo
+    networks:
+      - greenbeli_net
+
+  # Customer Frontend Service (greenbeli.in)
+  frontend:
+    build:
+      context: ./Nursery-fronted
+      dockerfile: Dockerfile
+    container_name: greenbeli_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - greenbeli_net
+
+  # Admin Dashboard Service (admin.greenbeli.in)
+  admin:
+    build:
+      context: ./nursery-admin
+      dockerfile: Dockerfile
+    container_name: greenbeli_admin
+    restart: always
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+    networks:
+      - greenbeli_net
+
+volumes:
+  mongo_data:
+    driver: local
+
+networks:
+  greenbeli_net:
+    driver: bridge

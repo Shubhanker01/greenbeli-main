@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Production & Build outputs
+dist/
+dist-ssr/
+build/
+build_error.txt
+
+# Dynamic Uploads (keep directory structure)
+public/Uploads/*
+!public/Uploads/.gitkeep
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
