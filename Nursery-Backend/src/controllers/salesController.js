@@ -3,62 +3,142 @@ const asyncHandler = require("../utils/asyncHandler");
 const Sale = require("../models/salemodel");
 const Product = require("../models/Productsmodel");
 const Admin = require("../models/admin");
+const { randomUUID } = require("node:crypto");
+const { effectiveSellingUnit } = require("../utils/productPricing");
 
 // POST /sales  (admin)
-// body: { productId, quantity }
+// body: { items: [{ productId, quantity }], customerName, customerPhone, paymentMethod }
 const createSale = asyncHandler(async (req, res) => {
-  const { productId, quantity } = req.body || {};
+  const {
+    items: submittedItems,
+    productId: legacyProductId,
+    quantity: legacyQuantity,
+    customerName = "Walk-in Customer",
+    customerPhone = "",
+    paymentMethod = "Cash",
+  } = req.body || {};
+  const items = Array.isArray(submittedItems)
+    ? submittedItems
+    : [{ productId: legacyProductId, quantity: legacyQuantity }];
 
-  if (!productId || !mongoose.Types.ObjectId.isValid(String(productId))) {
-    const err = new Error("productId is required");
+  if (items.length === 0) {
+    const err = new Error("At least one product is required");
     err.statusCode = 400;
     throw err;
   }
 
-  const qty = Number(quantity);
-  if (!Number.isFinite(qty) || qty <= 0) {
-    const err = new Error("quantity must be a positive number");
+  const quantitiesByProduct = new Map();
+  for (const item of items) {
+    const id = String(item?.productId || "");
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const err = new Error("Each item must have a valid productId");
+      err.statusCode = 400;
+      throw err;
+    }
+    const quantity = Number(item.quantity);
+    if (!Number.isSafeInteger(quantity) || quantity <= 0) {
+      const err = new Error("Each item quantity must be a positive integer");
+      err.statusCode = 400;
+      throw err;
+    }
+    const combinedQuantity = (quantitiesByProduct.get(id) || 0) + quantity;
+    if (!Number.isSafeInteger(combinedQuantity)) {
+      const err = new Error("Combined item quantity is too large");
+      err.statusCode = 400;
+      throw err;
+    }
+    quantitiesByProduct.set(id, combinedQuantity);
+  }
+
+  const allowedPaymentMethods = ["Cash", "UPI", "Card"];
+  if (!allowedPaymentMethods.includes(String(paymentMethod))) {
+    const err = new Error(`paymentMethod must be one of: ${allowedPaymentMethods.join(", ")}`);
     err.statusCode = 400;
     throw err;
   }
 
-  const adminId = req.user && req.user.id ? req.user.id : null;
-  if (!adminId || !mongoose.Types.ObjectId.isValid(String(adminId))) {
-    const err = new Error("Not authenticated");
-    err.statusCode = 401;
-    throw err;
+  const productIds = [...quantitiesByProduct.keys()];
+  const products = await Product.find({ _id: { $in: productIds } });
+  const productsById = new Map(products.map((product) => [String(product._id), product]));
+
+  for (const [id, quantity] of quantitiesByProduct) {
+    const product = productsById.get(id);
+    if (!product) {
+      const err = new Error(`Product not found: ${id}`);
+      err.statusCode = 404;
+      throw err;
+    }
+    if (product.isActive === false) {
+      const err = new Error(`${product.name} is inactive and cannot be sold`);
+      err.statusCode = 400;
+      throw err;
+    }
+    if (product.stock < quantity) {
+      const err = new Error(`Insufficient stock for ${product.name}`);
+      err.statusCode = 400;
+      throw err;
+    }
   }
 
-  const product = await Product.findById(productId);
-  if (!product) {
-    const err = new Error("Product not found");
-    err.statusCode = 404;
-    throw err;
+  const adminEmail = String(req.user?.email || "").toLowerCase();
+  const admin = adminEmail ? await Admin.findOne({ email: adminEmail }).select("_id") : null;
+  const receiptNo = `REC-${randomUUID().slice(0, 8).toUpperCase()}`;
+  const saleRecords = [];
+  const updatedStock = [];
+
+  try {
+    for (const [id, quantity] of quantitiesByProduct) {
+      const result = await Product.updateOne(
+        { _id: id, stock: { $gte: quantity } },
+        { $inc: { stock: -quantity } }
+      );
+      if (result.matchedCount !== 1) {
+        const err = new Error(`Insufficient stock for ${productsById.get(id).name}`);
+        err.statusCode = 409;
+        throw err;
+      }
+      updatedStock.push({ id, quantity });
+    }
+
+    const saleDocuments = [...quantitiesByProduct].map(([id, quantity]) => {
+      const product = productsById.get(id);
+      const unitPrice = effectiveSellingUnit(product);
+      return {
+        productId: id,
+        adminId: admin?._id || null,
+        receiptNo,
+        customerName: String(customerName || "Walk-in Customer").trim(),
+        customerPhone: String(customerPhone || "").trim(),
+        paymentMethod: String(paymentMethod),
+        quantity,
+        unitPrice,
+        totalAmount: unitPrice * quantity,
+      };
+    });
+    saleRecords.push(...await Sale.create(saleDocuments));
+  } catch (error) {
+    const rollbackResults = await Promise.allSettled([
+      Sale.deleteMany({ receiptNo }),
+      ...updatedStock.map(({ id, quantity }) =>
+        Product.updateOne({ _id: id }, { $inc: { stock: quantity } })
+      ),
+    ]);
+    rollbackResults
+      .filter((result) => result.status === "rejected")
+      .forEach((result) => console.error("POS sale rollback failed:", result.reason));
+    throw error;
   }
 
-  if (typeof product.stock === "number" && product.stock < qty) {
-    const err = new Error("Insufficient stock");
-    err.statusCode = 400;
-    throw err;
-  }
-
-  const unitPrice = Number(product.price || 0);
-  const unitDiscount = Number(product.discount || 0);
-  const effectiveUnit = Math.max(0, unitPrice - unitDiscount);
-  const totalAmount = effectiveUnit * qty;
-
-  // reduce stock
-  product.stock = Number(product.stock || 0) - qty;
-  await product.save();
-
-  const sale = await Sale.create({
-    productId,
-    adminId,
-    quantity: qty,
+  const totalAmount = saleRecords.reduce((total, sale) => total + sale.totalAmount, 0);
+  res.status(201).json({
+    _id: saleRecords[0]._id,
+    receiptNo,
+    customerName: saleRecords[0].customerName,
+    customerPhone: saleRecords[0].customerPhone,
+    paymentMethod: saleRecords[0].paymentMethod,
+    createdAt: saleRecords[0].createdAt,
     totalAmount,
   });
-
-  res.status(201).json(sale);
 });
 
 function buildSalesFilter(query = {}, user = {}) {
@@ -249,7 +329,27 @@ const getSale = asyncHandler(async (req, res) => {
     throw err;
   }
 
-  res.json(sale);
+  const receiptSales = sale.receiptNo
+    ? await Sale.find({ receiptNo: sale.receiptNo }).populate("productId").sort({ createdAt: 1 })
+    : [sale];
+  const items = receiptSales.map((receiptSale) => ({
+    productId: receiptSale.productId?._id || receiptSale.productId,
+    name: receiptSale.productId?.name || "Product no longer available",
+    quantity: receiptSale.quantity,
+    price: Number(receiptSale.unitPrice ?? (receiptSale.totalAmount / receiptSale.quantity)),
+    totalAmount: receiptSale.totalAmount,
+  }));
+
+  res.json({
+    _id: sale._id,
+    receiptNo: sale.receiptNo || String(sale._id),
+    customerName: sale.customerName || "Walk-in Customer",
+    customerPhone: sale.customerPhone || "",
+    paymentMethod: sale.paymentMethod || "Cash",
+    createdAt: sale.createdAt,
+    totalAmount: receiptSales.reduce((total, receiptSale) => total + Number(receiptSale.totalAmount || 0), 0),
+    items,
+  });
 });
 
 module.exports = { createSale, listSales, getSale, salesSummary, salesProductSummary };

@@ -8,6 +8,7 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -21,11 +22,12 @@ export default function Products() {
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this plant product?")) {
+      setDeleteError("");
       try {
         await deleteProductApi(id);
-        setProducts(products.filter((p) => p._id !== id));
-      } catch (e) {
-        setProducts(products.filter((p) => p._id !== id));
+        setProducts((currentProducts) => currentProducts.filter((p) => p._id !== id));
+      } catch (error) {
+        setDeleteError(error.message || "Unable to delete the product. Please try again.");
       }
     }
   };
@@ -56,6 +58,12 @@ export default function Products() {
           <Plus className="w-4 h-4" /> Add New Plant Product
         </Link>
       </div>
+
+      {deleteError && (
+        <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-4 rounded-2xl">
+          {deleteError}
+        </div>
+      )}
 
       {/* Control Bar */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between gap-4">

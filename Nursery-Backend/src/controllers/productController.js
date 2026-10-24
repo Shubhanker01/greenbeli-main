@@ -1,6 +1,12 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Productsmodel");
 const asyncHandler = require("../utils/asyncHandler");
+const {
+  uploadImages,
+  deleteImages,
+  pathFromPublicUrl,
+  ImageUploadError
+} = require("../utils/supabaseStorage.js")
 
 const pickDefined = (obj) => {
   const out = {};
@@ -199,10 +205,11 @@ function parseSubcategoriesText(input) {
 //   });
 // });
 
+
 const productadd = async (req, res) => {
+  let uploaded = [];
   try {
-    const {
-      name,
+    const { name,
       sku,
       slug,
       categoryId,
@@ -251,26 +258,17 @@ const productadd = async (req, res) => {
       soldBy,
       responseRate,
       isActive
+
     } = req.body;
 
-    // ✅ required validation
     if (!name || !price || !stock) {
-      return res.status(400).json({ message: "name, price, stock required" });
+      return res.status(400).json({ success: false, message: "Name, price and stock are required" });
     }
-
-    const image = req.files?.map(file => file.filename)
-      || (req.file ? [req.file.filename] : []);
-    // ✅ SKU check
-    if (sku) {
-      const exist = await Product.findOne({ sku });
-      if (exist) {
-        return res.status(400).json({ message: "SKU already exists" });
-      }
-    }
+    const files = req.files?.length ? req.files : req.file ? [req.file] : [];
+    uploaded = await uploadImages(files, { folder: "products" });
+    const images = uploaded.map((u) => u.url);
 
     const product = await Product.create({
-      user: req.user?.id,
-
       name,
       sku,
       slug,
@@ -312,7 +310,6 @@ const productadd = async (req, res) => {
       seasonalAvailability,
 
       videoUrl,
-      images: image || [],
 
       seoTitle,
       metaTitle,
@@ -321,18 +318,26 @@ const productadd = async (req, res) => {
 
       soldBy,
       responseRate,
-      isActive
+      isActive,
+      images,
+      // optional: imagePaths: uploaded.map((u) => u.path),  // makes deleting later easier
     });
 
-    res.status(201).json({
-      success: true,
-      data: product
-    });
-
+    return res.status(201).json({ success: true, data: product });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    // The product was not saved, so don't leave orphan files in the bucket
+    await deleteImages(uploaded.map((u) => u.path));
+
+    if (err instanceof ImageUploadError) {
+      return res.status(err.status).json({ success: false, message: err.message });
+    }
+    if (err?.name === "MulterError") {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    console.error("productadd:", err);
+    return res.status(500).json({ success: false, message: "Could not add the product" });
   }
-}
+};
 
 const listProducts = asyncHandler(async (req, res) => {
   const {
@@ -621,6 +626,12 @@ const deleteProduct = asyncHandler(async (req, res) => {
     err.statusCode = 404;
     throw err;
   }
+
+  const imagePaths = (deleted.images || [])
+    .map(pathFromPublicUrl)
+    .filter(Boolean);
+  await deleteImages(imagePaths);
+
   res.json({ success: true, message: "Product deleted" });
 });
 

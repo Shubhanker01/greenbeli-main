@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sprout, Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import api from "../lib/axios";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -16,13 +17,18 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await loginAdmin(email, password);
+    const res = await api.post("/admin/login", { email, password });
     setLoading(false);
-
-    if (res.success) {
-      navigate("/");
+    const data = res.data;
+    if (data.success) {
+      if (data.nextStep === 'mfa-setup') {
+        navigate("/mfa-enrollment")
+      }
+      else if (data.nextStep === 'mfa') {
+        navigate("/mfa-verify")
+      }
     } else {
-      setError(res.message || "Invalid admin credentials.");
+      setError(data.message || "Invalid admin credentials.");
     }
   };
 

@@ -1,10 +1,16 @@
 // Centralized API Client for Nursery-fronted
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5007/api";
+import axiosApi from "../lib/axios";
 
 export function getToken() {
   return localStorage.getItem("nursery_user_token");
 }
+
+export const getLatestCategoriesApi = async (signal) => {
+  const response = await axiosApi.get('/categories', { signal });
+  return response.data; // Returns the array of categories
+};
 
 export function setToken(token) {
   if (token) localStorage.setItem("nursery_user_token", token);
@@ -17,16 +23,6 @@ export function resolveImageUrl(url) {
   const backendOrigin = BASE_URL.replace(/\/api\/?$/, "");
   return `${backendOrigin}${url.startsWith("/") ? "" : "/"}${url}`;
 }
-
-// Fallback Seed Data for smooth offline / initial experience
-export const FALLBACK_CATEGORIES = [
-  { _id: "cat-1", name: "Indoor Plants", slug: "indoor-plants", description: "Purify your living space with vibrant indoor greenery.", image: "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=600&q=80" },
-  { _id: "cat-2", name: "Outdoor Plants", slug: "outdoor-plants", description: "Lush flowering and garden landscape plants for balcony & garden.", image: "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&w=600&q=80" },
-  { _id: "cat-3", name: "Pots & Planters", slug: "pots-planters", description: "Ceramic, terracotta, and modern minimalist planters.", image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=600&q=80" },
-  { _id: "cat-4", name: "Gardening Tools", slug: "gardening-tools", description: "Ergonomic pruners, soil shovels, and watering tools.", image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=600&q=80" },
-  { _id: "cat-5", name: "Plant Care", slug: "plant-care", description: "Organic fertilizers, soil mixes, and pest control.", image: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=600&q=80" },
-  { _id: "cat-6", name: "Seeds & Bulbs", slug: "seeds-bulbs", description: "High germinating exotic flower, herb & vegetable seeds.", image: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=600&q=80" },
-];
 
 export const FALLBACK_PRODUCTS = [
   {
@@ -201,6 +197,9 @@ export async function fetchApi(endpoint, options = {}) {
     throw err;
   }
 }
+
+
+
 
 // Unified API helper (callable as a function or via method helpers)
 export async function api(endpoint, options = {}) {

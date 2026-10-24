@@ -10,7 +10,7 @@ export default function Testimonials() {
     async function loadData() {
       setLoading(true);
       const data = await getAdminTestimonialsApi();
-      setTestimonials(Array.isArray(data) ? data : []);
+      setTestimonials(Array.isArray(data.items) ? data.items : []);
       setLoading(false);
     }
     loadData();
@@ -72,9 +72,8 @@ export default function Testimonials() {
                     </td>
                     <td className="py-3.5 px-4 text-slate-600 max-w-sm italic">"{t.comment}"</td>
                     <td className="py-3.5 px-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        t.isApproved ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                      }`}>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${t.isApproved ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                        }`}>
                         {t.isApproved ? "Approved Live" : "Pending Review"}
                       </span>
                     </td>
@@ -82,11 +81,10 @@ export default function Testimonials() {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleToggleApproval(t._id, t.isApproved)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                            t.isApproved
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${t.isApproved
                               ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
                               : "bg-emerald-800 text-white hover:bg-emerald-900"
-                          }`}
+                            }`}
                         >
                           {t.isApproved ? "Unapprove" : "Approve Live"}
                         </button>

@@ -1,67 +1,25 @@
-import React, { createContext, useContext, useState } from "react";
-import { loginAdminApi } from "../utils/adminApi";
+import { useEffect, useState, useCallback, useContext, createContext } from "react"
+// AdminAuthProvider.jsx: ask the server, don't read localStorage
+const AdminAuthContext = createContext(null);
+export const useAdminAuth = () => useContext(AdminAuthContext);
+const API_URL = "http://localhost:5007"
+export function AdminAuthProvider({ children }) {
+  const [state, setState] = useState({ status: "loading" });
 
-const AdminAuthContext = createContext();
-
-export const AdminAuthProvider = ({ children }) => {
-  const [admin, setAdmin] = useState(() => {
-    const saved = localStorage.getItem("nursery_admin_info");
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [token, setToken] = useState(() => localStorage.getItem("nursery_admin_token") || null);
-  const [loading, setLoading] = useState(false);
-
-  const loginAdmin = async (email, password) => {
-    setLoading(true);
+  const refresh = useCallback(async () => {
     try {
-      const res = await loginAdminApi(email, password);
-      if (res.token) {
-        setToken(res.token);
-        localStorage.setItem("nursery_admin_token", res.token);
-      }
-      const adminInfo = res.admin || { email, role: "admin", name: email.split("@")[0] };
-      setAdmin(adminInfo);
-      localStorage.setItem("nursery_admin_info", JSON.stringify(adminInfo));
-      setLoading(false);
-      return { success: true, admin: adminInfo };
-    } catch (err) {
-      // Fallback dev login option
-      if (email === "admin@greenbeli.in" || email.includes("admin")) {
-        const adminInfo = { email, role: "superadmin", name: "Master Admin" };
-        const dummyToken = "admin-secret-token-12345";
-        setAdmin(adminInfo);
-        setToken(dummyToken);
-        localStorage.setItem("nursery_admin_info", JSON.stringify(adminInfo));
-        localStorage.setItem("nursery_admin_token", dummyToken);
-        setLoading(false);
-        return { success: true, admin: adminInfo };
-      }
-      setLoading(false);
-      return { success: false, message: err.message || "Admin login failed" };
+      const r = await fetch(`${API_URL}/api/admin/session`, { credentials: "include" });
+      setState(await r.json());
+    } catch {
+      setState({ status: "unauthenticated" });
     }
-  };
+  }, []);
 
-  const logoutAdmin = () => {
-    setAdmin(null);
-    setToken(null);
-    localStorage.removeItem("nursery_admin_token");
-    localStorage.removeItem("nursery_admin_info");
-  };
+  useEffect(() => { refresh(); }, [refresh]);
 
   return (
-    <AdminAuthContext.Provider
-      value={{
-        admin,
-        token,
-        loading,
-        loginAdmin,
-        logoutAdmin,
-        isAuthenticated: !!admin,
-      }}
-    >
+    <AdminAuthContext.Provider value={{ ...state, refresh }}>
       {children}
     </AdminAuthContext.Provider>
   );
-};
-
-export const useAdminAuth = () => useContext(AdminAuthContext);
+}

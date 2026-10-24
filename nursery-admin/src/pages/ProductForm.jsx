@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft, Save, Upload, Sparkles, Plus } from "lucide-react";
 import { addProductApi, updateProductApi, getAdminCategoriesApi, getAdminProductsApi } from "../utils/adminApi";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 export default function ProductForm() {
   const { id } = useParams();
   const isEdit = !!id;
   const navigate = useNavigate();
+  const { status: authStatus } = useAdminAuth();
 
   const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
@@ -26,6 +28,7 @@ export default function ProductForm() {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadInitialData() {
@@ -67,6 +70,7 @@ export default function ProductForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError("");
 
     const body = new FormData();
     Object.keys(formData).forEach((key) => {
@@ -81,15 +85,14 @@ export default function ProductForm() {
       if (isEdit) {
         await updateProductApi(id, formData);
       } else {
-        await addProductApi(body);
+        await addProductApi(body, authStatus);
       }
       setSubmitting(false);
       setSuccess(true);
       setTimeout(() => navigate("/products"), 1200);
     } catch (err) {
       setSubmitting(false);
-      setSuccess(true);
-      setTimeout(() => navigate("/products"), 1200);
+      setError(err.message || "Unable to save the product.");
     }
   };
 
@@ -113,6 +116,11 @@ export default function ProductForm() {
       {success && (
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-4 rounded-2xl">
           ✓ Plant product saved successfully! Redirecting...
+        </div>
+      )}
+      {error && (
+        <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-4 rounded-2xl">
+          {error}
         </div>
       )}
 

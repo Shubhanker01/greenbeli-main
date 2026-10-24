@@ -2,6 +2,25 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/admin");
+const { createClient } = require('../config/supabase');
+const AuthSecurityTracker = require('../models/authSecurityTracker');
+
+// GET /api/admin/session  (NOT behind requireAdmin)
+const adminSession = async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const supabase = createClient(req, res);
+  const { data } = await supabase.auth.getUser();
+  console.log(data)
+  const user = data?.user;
+  if (!user) return res.json({ status: "unauthenticated" });
+  console.log(user.app_metadata.role)
+  if (user.app_metadata?.role !== "admin") return res.json({ status: "forbidden" });
+
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.currentLevel === "aal2") return res.json({ status: "ok", email: user.email });
+  return res.json({ status: aal?.nextLevel === "aal2" ? "mfa_required" : "mfa_enroll" });
+}
+
 
 const generateToken = (id, role) => {
   return jwt.sign(
@@ -67,37 +86,80 @@ exports.loginAdmin = async (req, res) => {
     const { email, password } = req.body || {};
     const emailNorm = email ? String(email).toLowerCase().trim() : "";
 
-
-
     if (!emailNorm || !password) {
       return res.status(400).json({ message: "Email and password are required" });
     }
+    let tracker = await AuthSecurityTracker.findOne({ identifier: emailNorm });
 
-    const admin = await Admin.findOne({ email: emailNorm });
+    if (tracker && tracker.isPasswordLocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Account locked due to multiple login failure attempts"
+      })
+    }
+    const supabase = createClient(req, res);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: emailNorm,
+      password: password
+    })
 
-    if (admin && (await bcrypt.compare(password, admin.password))) {
+    if (error) {
+      tracker = await AuthSecurityTracker.findOneAndUpdate(
+        { identifier: emailNorm },
+        {
+          $inc: { passwordFailures: 1 },
+          $set: { lastFailedAt: new Date(), updatedAt: new Date() }
+        }, {
+        upsert: true,
+        new: true
+      }
+      )
+      if (tracker.passwordFailures >= 5) {
+        tracker.isPasswordLocked = true
+        await tracker.save()
+        return res.status(403).json({
+          success: false,
+          message: "Too many failed attempts your account has been locked"
+        })
+      }
+      return res.status(401).json({
+        success: false,
+        message: "Email or password is incorrect"
+      })
 
-      admin.lastLoginAt = new Date();
-      await admin.save();
-
-      res.json({
-        success: true,
-        message: "Login Success",
-        token: generateToken(admin._id, admin.role),
-        admin: {
-          id: admin._id,
-          name: admin.name,
-          email: admin.email,
-          role: admin.role,
-        },
-      });
-
-    } else {
-      res.status(401).json({
-        message: "Invalid email or password. Register an admin first via POST /api/admin/register if none exists.",
-      });
     }
 
+    if (tracker) {
+      await AuthSecurityTracker.findOneAndUpdate({
+        identifier: emailNorm
+      }, {
+        $set: {
+          passwordFailures: 0,
+          isPasswordLocked: false,
+          updatedAt: new Date()
+        }
+      })
+    }
+
+    const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (aalError) {
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error Occured"
+      })
+    }
+    let nextStep = "done";
+    const nextLevel = aalData?.nextLevel;
+    if (nextLevel === 'aal1') {
+      nextStep = "mfa-setup"
+    }
+    if (nextLevel === 'aal2') {
+      nextStep = "mfa"
+    }
+    return res.json({
+      success: true,
+      nextStep
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -276,3 +338,5 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.adminSession = adminSession;

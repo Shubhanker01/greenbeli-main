@@ -69,7 +69,11 @@ const categorySchema = new mongoose.Schema(
     },
     isActive: { type: Boolean, default: true },
     subcategories: [subcategorySchema],
-
+    imageUrl: {
+      type: String,
+      default: "",
+      trim: true
+    }
   },
   { timestamps: true }
 );

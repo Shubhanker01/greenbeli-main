@@ -10,16 +10,6 @@ import BotanicalSection from "../components/BotanicalSection";
 import TestimonialsSection, { TestimonialModal } from "../components/TestimonialsSection";
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [categories, setCategories] = useState([]);
-  const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [testimonials, setTestimonials] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Active collection tab
-  const [activeTab, setActiveTab] = useState("all");
-
-  const [activeTestimonialIdx, setActiveTestimonialIdx] = useState(0);
   const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState(false);
 
   // Review form state
@@ -30,22 +20,6 @@ export default function Home() {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
-
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      const [cats, prods, tests] = await Promise.all([
-        getCategories(),
-        getProducts({ limit: 12 }),
-        getTestimonials(),
-      ]);
-      setCategories(cats);
-      setFeaturedProducts(prods);
-      setTestimonials(tests);
-      setLoading(false);
-    }
-    loadData();
-  }, []);
 
   const handleTestimonialSubmit = async (e) => {
     e.preventDefault();
@@ -68,49 +42,20 @@ export default function Home() {
     }, 2000);
   };
 
-  // Filter products by tab
-  const filteredProducts = featuredProducts.filter((product) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "indoor") {
-      return (
-        product.categorySlug === "indoor-plants" ||
-        product.category === "Indoor Plants" ||
-        product.careLevel === "Easy" ||
-        product.name.toLowerCase().includes("plant") ||
-        product.name.toLowerCase().includes("lily")
-      );
-    }
-    if (activeTab === "outdoor") {
-      return (
-        product.categorySlug === "outdoor-plants" ||
-        product.category === "Outdoor Plants" ||
-        product.name.toLowerCase().includes("bonsai") ||
-        product.name.toLowerCase().includes("bougainvillea")
-      );
-    }
-    if (activeTab === "pots") {
-      return (
-        product.categorySlug === "pots-planters" ||
-        product.category === "Pots & Planters" ||
-        product.name.toLowerCase().includes("planter") ||
-        product.name.toLowerCase().includes("pot")
-      );
-    }
-    return true;
-  });
 
   return (
-    <div className="space-y-16 sm:space-y-24 pb-20 sm:pb-24 overflow-hidden bg-[url(/public/gardening-leaf-pattern.svg)]">
+
+    <div className="space-y-16 sm:space-y-24 pb-20 sm:pb-24 overflow-hidden bg-[#f6f3ea]">
 
       {/* 1. HERO SECTION - Ultra Luxury Botanical Showcase */}
       <Hero />
 
       {/* 2. CATEGORY HIGHLIGHT CARDS */}
-      <CategoryHighlight categories={categories} />
+      <CategoryHighlight />
 
 
       {/* 3. FEATURED COLLECTION TABS & PRODUCTS */}
-      <FeaturedCollection filteredProducts={filteredProducts} loading={loading} activeTab={activeTab} setActiveTab={setActiveTab} />
+      <FeaturedCollection />
 
       {/* 4. INTERACTIVE PLANT FINDER QUIZ */}
       <section id="plant-quiz" className="max-w-7xl mx-auto px-4 sm:px-8">
@@ -124,7 +69,6 @@ export default function Home() {
 
 
       <TestimonialsSection
-        testimonials={testimonials}
         onShare={() => setIsTestimonialModalOpen(true)}
       />
 

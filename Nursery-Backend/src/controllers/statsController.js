@@ -3,19 +3,23 @@ const Category = require("../models/Categories");
 const Order = require("../models/ordermodels");
 const User = require("../models/User");
 const Sale = require("../models/salemodel");
+const Lead = require("../models/Lead");
 const asyncHandler = require("../utils/asyncHandler");
 
 const dashboardStats = asyncHandler(async (_req, res) => {
   const [
-    products,
+    totalProducts,
     categories,
-    orders,
+    totalOrders,
     users,
     revenueAgg,
     salesCount,
     salesRevenueAgg,
+    inquiryLeads,
+    pendingOrders,
+    recentOrderDocuments,
   ] = await Promise.all([
-    Product.countDocuments(),
+    Product.countDocuments({ isActive: true }),
     Category.countDocuments(),
     Order.countDocuments(),
     User.countDocuments(),
@@ -25,24 +29,34 @@ const dashboardStats = asyncHandler(async (_req, res) => {
     ]),
     Sale.countDocuments(),
     Sale.aggregate([{ $group: { _id: null, total: { $sum: "$totalAmount" } } }]),
+    Lead.countDocuments(),
+    Order.countDocuments({ orderStatus: { $in: ["Pending", "Processing"] } }),
+    Order.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("user", "name firstName"),
   ]);
 
-  const revenue =
-    revenueAgg && revenueAgg[0] && typeof revenueAgg[0].total === "number"
-      ? revenueAgg[0].total
-      : 0;
-
-  const salesRevenue =
-    salesRevenueAgg && salesRevenueAgg[0] && typeof salesRevenueAgg[0].total === "number"
-      ? salesRevenueAgg[0].total
-      : 0;
+  const orderRevenue = Number(revenueAgg[0]?.total) || 0;
+  const salesRevenue = Number(salesRevenueAgg[0]?.total) || 0;
+  const recentOrders = recentOrderDocuments.map((order) => ({
+    _id: order._id,
+    customerName: order.user?.name || order.user?.firstName || "Customer",
+    totalAmount: order.totalPrice,
+    status: order.orderStatus,
+  }));
 
   res.json({
-    products,
+    totalRevenue: orderRevenue + salesRevenue,
+    totalOrders,
+    totalProducts,
+    inquiryLeads,
+    pendingOrders,
+    recentOrders,
+    products: totalProducts,
     categories,
-    orders,
+    orders: totalOrders,
     users,
-    revenue,
     salesCount,
     salesRevenue,
   });

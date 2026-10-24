@@ -1,72 +1,134 @@
-import { useEffect } from "react";
-import { Star, Quote, Plus, CheckCircle2, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Star, Quote, Plus } from "lucide-react";
 import { Reveal, RevealGroup } from "./Reveal";
-export default function TestimonialsSection({ testimonials = [], onShare }) {
+import axiosApi from "../lib/axios"; // Adjust path to your axios instance
+import { X } from 'lucide-react';
+
+// Color Palette Tokens based on Figma Design
+const GREEN = "#1f4a34";
+const GREEN_DARK = "#163828";
+const CREAM = "#f6f3ea";
+const SAGE = "#e8ede1";
+
+export default function TestimonialsSection({ onShare }) {
+    const [testimonials, setTestimonials] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const fetchTestimonials = async () => {
+            try {
+                setLoading(true);
+                // Adjust route path to match your backend testimonials endpoint
+                const response = await axiosApi.get('/testimonials', {
+                    signal: controller.signal
+                });
+                setTestimonials(response.data.items);
+            } catch (err) {
+                if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+                    console.error("Failed to load testimonials:", err);
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTestimonials();
+
+        return () => {
+            controller.abort();
+        };
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-800"></div>
+            </div>
+        );
+    }
+
     if (testimonials.length === 0) return null;
 
     return (
-        <section className="max-w-7xl mx-auto px-4 sm:px-8">
-            {/* Light emerald glass panel: same look as the category section */}
-            <div className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-emerald-100/40 via-emerald-50/25 to-emerald-100/35 backdrop-blur-sm border border-white/60 shadow-xl shadow-emerald-900/10 ring-1 ring-emerald-900/5 p-5 sm:p-10 lg:p-14">
-                {/* Soft ambient glows */}
-                <div className="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-emerald-300/30 blur-3xl" />
-                <div className="pointer-events-none absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-emerald-400/20 blur-3xl" />
-
+        <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12 sm:py-16">
+            {/* Main Section Outer Box - Matches Cream/Sage Warm Aesthetic */}
+            <div
+                className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-12 lg:p-16 border border-[#e2decb] shadow-sm"
+                style={{ backgroundColor: CREAM }}
+            >
                 <div className="relative z-10">
-                    {/* Header */}
-                    <Reveal className="relative isolate text-center max-w-2xl mx-auto mb-8 sm:mb-12 space-y-3">
-                        <div
-                            aria-hidden="true"
-                            className="pointer-events-none absolute -z-10 inset-x-0 -inset-y-6 mx-auto max-w-xl rounded-full bg-white/60 blur-2xl"
-                        />
-                        <span className="inline-block text-emerald-800 text-xs sm:text-sm font-extrabold uppercase tracking-widest bg-emerald-100/90 px-4 py-1.5 sm:py-2 rounded-full border border-emerald-200">
-                            Plant Parent Stories
+                    {/* Header Block matching Figma typography */}
+                    <Reveal className="relative text-center max-w-2xl mx-auto mb-10 sm:mb-14 space-y-3">
+                        <span
+                            className="inline-block text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] px-3.5 py-1.5 rounded-full border border-[#d8d2bf]"
+                            style={{ backgroundColor: SAGE, color: GREEN_DARK }}
+                        >
+                            PLANT PARENT STORIES
                         </span>
-                        <h2 className="serif-font text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900">
+
+                        <h2
+                            className="serif-font text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight"
+                            style={{ color: GREEN_DARK }}
+                        >
                             What Our Customers Say
                         </h2>
-                        <p className="text-slate-600 text-sm sm:text-lg leading-relaxed">
+
+                        <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-lg mx-auto">
                             Real words from the plant parents who bring our greenery home.
                         </p>
                     </Reveal>
 
-                    {/* Cards */}
-                    <RevealGroup stagger={0.14} delay={0.05} className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8">
+                    {/* Testimonial Cards Grid */}
+                    <RevealGroup stagger={0.14} delay={0.05} className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
                         {testimonials.slice(0, 3).map((item) => {
                             const rating = Math.min(5, Math.max(1, item.rating || 5));
                             const initial = (item.name || "?").trim().charAt(0).toUpperCase();
+
                             return (
                                 <Reveal key={item._id} effect="card" className="h-full">
-                                    {/* Reveal owns the entrance transform; the card keeps its own hover lift */}
-                                    <figure className="relative h-full flex flex-col justify-between gap-6 bg-white/70 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/80 shadow-lg shadow-emerald-900/5 transition duration-300 hover:-translate-y-1 hover:bg-white/90 hover:shadow-xl">
+                                    <figure
+                                        className="relative h-full flex flex-col justify-between gap-6 bg-white rounded-2xl p-6 sm:p-8 border border-[#eae5d8] transition duration-300 hover:-translate-y-1 hover:shadow-md"
+                                    >
                                         <Quote
                                             aria-hidden="true"
-                                            className="absolute top-5 right-6 w-10 h-10 sm:w-12 sm:h-12 text-emerald-200/80"
+                                            className="absolute top-6 right-6 w-8 h-8 sm:w-10 sm:h-10 opacity-20"
+                                            style={{ color: GREEN }}
                                         />
 
                                         <div className="space-y-4">
+                                            {/* Rating Stars */}
                                             <div
                                                 className="flex items-center gap-1"
                                                 role="img"
                                                 aria-label={`${rating} out of 5 stars`}
                                             >
                                                 {[...Array(rating)].map((_, i) => (
-                                                    <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
+                                                    <Star key={i} className="w-4 h-4 text-amber-500 fill-amber-500" />
                                                 ))}
                                             </div>
-                                            <blockquote className="text-slate-700 text-base sm:text-lg leading-relaxed">
+
+                                            {/* Quote Text */}
+                                            <blockquote className="text-slate-800 text-sm sm:text-base leading-relaxed font-normal">
                                                 "{item.comment}"
                                             </blockquote>
                                         </div>
 
-                                        <figcaption className="pt-5 border-t border-emerald-900/10 flex items-center gap-3 sm:gap-4">
-                                            <div className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-900 text-white flex items-center justify-center text-lg sm:text-xl font-bold shadow-md">
+                                        {/* Author Footer */}
+                                        <figcaption className="pt-5 border-t border-slate-100 flex items-center gap-3 sm:gap-4">
+                                            <div
+                                                className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full text-white flex items-center justify-center text-sm sm:text-base font-bold"
+                                                style={{ backgroundColor: GREEN }}
+                                            >
                                                 {initial}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-base sm:text-lg font-bold text-slate-900 truncate">{item.name}</p>
-                                                <p className="text-sm sm:text-base text-emerald-700 leading-snug">
-                                                    {item.role || "Plant Lover"} • {item.city || "India"}
+                                                <p className="text-sm sm:text-base font-bold text-slate-900 truncate">
+                                                    {item.name}
+                                                </p>
+                                                <p className="text-xs sm:text-sm text-slate-500 truncate">
+                                                    {item.city || "India"}
                                                 </p>
                                             </div>
                                         </figcaption>
@@ -76,13 +138,15 @@ export default function TestimonialsSection({ testimonials = [], onShare }) {
                         })}
                     </RevealGroup>
 
-                    {/* Share button */}
-                    <Reveal className="mt-8 sm:mt-12 flex justify-center">
+                    {/* Action Button styled like Figma Primary Green Buttons */}
+                    <Reveal className="mt-10 sm:mt-14 flex justify-center">
                         <button
                             onClick={onShare}
-                            className="group inline-flex items-center gap-2 rounded-full bg-emerald-800 hover:bg-emerald-900 text-white text-sm sm:text-base font-bold px-6 py-3 sm:px-8 sm:py-3.5 shadow-lg shadow-emerald-900/20 transition touch-active"
+                            className="group inline-flex items-center gap-2 rounded-full text-white text-sm font-bold px-7 py-3.5 shadow-sm transition hover:opacity-95 touch-active"
+                            style={{ backgroundColor: GREEN }}
                         >
-                            <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" /> Share Your Garden Story
+                            <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
+                            Share Your Garden Story
                         </button>
                     </Reveal>
                 </div>
@@ -92,11 +156,11 @@ export default function TestimonialsSection({ testimonials = [], onShare }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Review modal (named export)                                         */
+/* Review Modal Component                                             */
 /* ------------------------------------------------------------------ */
 const FIELD =
-    "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base text-slate-800 placeholder:text-slate-400 transition focus:outline-none focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/15";
-const LABEL = "text-sm font-bold text-slate-700 block mb-1.5";
+    "w-full bg-[#faf8f5] border border-[#e2decb] rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 transition focus:outline-none focus:bg-white focus:border-[#1f4a34] focus:ring-2 focus:ring-[#1f4a34]/15";
+const LABEL = "text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-wider";
 
 export function TestimonialModal({
     open,
@@ -115,7 +179,6 @@ export function TestimonialModal({
     reviewComment,
     setReviewComment,
 }) {
-    // Escape closes the modal and the page behind it stops scrolling while it's open
     useEffect(() => {
         if (!open) return;
         const onKey = (e) => e.key === "Escape" && onClose();
@@ -132,7 +195,7 @@ export function TestimonialModal({
 
     return (
         <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={onClose}
         >
             <div
@@ -140,32 +203,42 @@ export function TestimonialModal({
                 aria-modal="true"
                 aria-labelledby="review-title"
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-emerald-100 animate-fade-in relative"
+                className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-xl border border-[#e2decb] animate-fade-in relative"
             >
                 <button
                     type="button"
                     onClick={onClose}
                     aria-label="Close"
-                    className="absolute top-4 right-4 p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
+                    className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition"
                 >
                     <X className="w-5 h-5" />
                 </button>
 
-                <h3 id="review-title" className="serif-font text-2xl sm:text-3xl font-bold text-slate-900 mb-2 pr-10">
+                <h3
+                    id="review-title"
+                    className="serif-font text-2xl sm:text-3xl font-bold mb-2 pr-10"
+                    style={{ color: GREEN_DARK }}
+                >
                     Share Your Nursery Review
                 </h3>
-                <p className="text-sm sm:text-base text-slate-500 mb-6 leading-relaxed">
-                    Let other plant lovers know about your experience with GreenBeli.
+                <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                    Let other plant parents know about your experience with GreenBeli.
                 </p>
 
                 {reviewSuccess ? (
-                    <div className="bg-emerald-50 text-emerald-800 p-6 sm:p-8 rounded-2xl text-center space-y-3">
-                        <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-                        <p className="text-base sm:text-lg font-bold">Thank you! Your garden review was submitted successfully.</p>
+                    <div
+                        className="p-6 sm:p-8 rounded-2xl text-center space-y-4 border border-[#d3ddc7]"
+                        style={{ backgroundColor: SAGE }}
+                    >
+                        <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: GREEN }} />
+                        <p className="text-base font-bold" style={{ color: GREEN_DARK }}>
+                            Thank you! Your garden review was submitted successfully.
+                        </p>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="mt-2 bg-emerald-800 text-white text-sm sm:text-base font-bold px-6 py-2.5 rounded-xl shadow-md hover:bg-emerald-900 transition"
+                            className="mt-2 text-white text-sm font-bold px-6 py-2.5 rounded-full transition hover:opacity-95"
+                            style={{ backgroundColor: GREEN }}
                         >
                             Close
                         </button>
@@ -188,7 +261,7 @@ export function TestimonialModal({
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="rv-role" className={LABEL}>Role/Tag</label>
+                                <label htmlFor="rv-role" className={LABEL}>Role / Tag</label>
                                 <input
                                     id="rv-role"
                                     type="text"
@@ -238,18 +311,19 @@ export function TestimonialModal({
                             />
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 pt-2">
+                        <div className="flex items-center justify-end gap-3 pt-3">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-5 py-2.5 text-sm sm:text-base font-semibold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition"
+                                className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 rounded-full hover:bg-slate-100 transition"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={reviewSubmitting}
-                                className="bg-emerald-800 text-white text-sm sm:text-base font-bold px-6 py-2.5 sm:px-8 sm:py-3 rounded-xl shadow-md hover:bg-emerald-900 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="text-white text-sm font-bold px-7 py-2.5 rounded-full transition disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-95"
+                                style={{ backgroundColor: GREEN }}
                             >
                                 {reviewSubmitting ? "Submitting..." : "Submit Review"}
                             </button>

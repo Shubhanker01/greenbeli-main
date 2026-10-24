@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require("../middleware/authMiddleware");
-const { requireRole } = require("../middleware/requireRole");
+const multer = require("multer");
+const { authMiddleware, requireAuth } = require("../middleware/authMiddleware");
+const { MAX_IMAGE_BYTES } = require("../utils/supabaseStorage");
 const {
   productadd,
   listProducts,
@@ -12,7 +13,10 @@ const {
   addOrUpdateMyReview,
   updateReview,
 } = require("../controllers/productController");
-const upload = require('../../multer');
+const productUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_BYTES, files: 8 },
+});
 
 
 
@@ -25,12 +29,11 @@ router.post("/:id/reviews", authMiddleware, addOrUpdateMyReview);
 router.put("/:id/reviews/:reviewId", authMiddleware, updateReview);
 
 // admin write
-router.post('/add' , authMiddleware, upload.array("images") ,  requireRole(["admin", "superadmin"]), productadd);
-router.put("/:id", authMiddleware, requireRole(["admin", "superadmin"]), updateProduct);
+router.post('/add', requireAuth, productUpload.array("images", 8), productadd);
+router.put("/:id", requireAuth, updateProduct);
 router.delete(
   "/:id",
-  authMiddleware,
-  requireRole(["admin", "superadmin"]),
+  requireAuth,
   deleteProduct
 );
 

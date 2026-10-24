@@ -17,6 +17,12 @@ import {
 } from "lucide-react";
 import { RevealGroup } from "./Reveal";
 
+// Color Palette Tokens based on Greenbeli Figma Design
+const GREEN = "#1f4a34";
+const GREEN_DARK = "#163828";
+const CREAM = "#f6f3ea";
+const SAGE = "#e8ede1";
+
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -30,166 +36,185 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-emerald-950 text-emerald-100 pt-12 sm:pt-16 pb-24 sm:pb-8 border-t border-emerald-900">
-      <RevealGroup effect="fadeUp" stagger={0.1}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-8">
-
-          {/* Trust Badges */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 pb-8 sm:pb-12 border-b border-emerald-900/80">
-            <div className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl bg-emerald-900/40 border border-emerald-800/40">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-800/80 text-emerald-300 flex items-center justify-center flex-shrink-0">
-                <Leaf className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm sm:text-base text-white">100% Healthy Plants</h4>
-                <p className="text-xs text-emerald-300/80">Grown organically & hand-inspected.</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl bg-emerald-900/40 border border-emerald-800/40">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-800/80 text-emerald-300 flex items-center justify-center flex-shrink-0">
-                <Truck className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm sm:text-base text-white">Eco Secure Packaging</h4>
-                <p className="text-xs text-emerald-300/80">Custom potted plant transit protection.</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl bg-emerald-900/40 border border-emerald-800/40">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-800/80 text-emerald-300 flex items-center justify-center flex-shrink-0">
-                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm sm:text-base text-white">7-Day Replacement</h4>
-                <p className="text-xs text-emerald-300/80">Hassle-free guarantee for all shipments.</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl bg-emerald-900/40 border border-emerald-800/40">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-800/80 text-emerald-300 flex items-center justify-center flex-shrink-0">
-                <Headphones className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm sm:text-base text-white">Botanist Support</h4>
-                <p className="text-xs text-emerald-300/80">Free plant care consultation anytime.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Footer Content */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10 py-8 sm:py-12 border-b border-emerald-900/80">
-
-            {/* Brand & Newsletter */}
-            <div className="sm:col-span-2 space-y-4">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white">
-                  <Sprout className="w-5 h-5 sm:w-6 sm:h-6" />
-                </div>
-                <span className="serif-font text-[22px] sm:text-[26px] font-bold text-white">GreenBeli</span>
-              </Link>
-              <p className="text-sm text-emerald-200/70 leading-relaxed max-w-sm">
-                We are a premier botanical nursery dedicated to bringing pristine indoor greenery, garden landscaping, and sustainable planting accessories directly to your home.
+    <footer className="w-full pt-6">
+      {/* ------------------------------------------------------------- */}
+      {/* 1. Newsletter Banner Section (Light Sage Card from Figma)    */}
+      {/* ------------------------------------------------------------- */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 mb-12 sm:mb-16">
+        <div
+          className="rounded-3xl p-8 sm:p-12 lg:p-16 border border-[#d8d2bf]"
+          style={{ backgroundColor: SAGE }}
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            {/* Heading & Subtext */}
+            <div className="space-y-3 max-w-xl">
+              <span
+                className="text-[11px] font-bold uppercase tracking-[0.2em]"
+                style={{ color: GREEN_DARK }}
+              >
+                GOOD THINGS ARE GROWING
+              </span>
+              <h2
+                className="serif-font text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight"
+                style={{ color: GREEN_DARK }}
+              >
+                Let’s grow something together.
+              </h2>
+              <p className="text-slate-700 text-sm sm:text-base">
+                Fresh arrivals, seasonal advice, and 10% off your first order.
               </p>
+            </div>
 
-              <div className="pt-2">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                  Join the Green Club & Get 15% OFF
-                </h5>
-                {subscribed ? (
-                  <div className="bg-emerald-900/80 text-emerald-200 text-sm p-3 rounded-xl border border-emerald-700">
-                    🎉 Thank you for subscribing! Check your inbox for your discount code.
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md">
+            {/* Input Form matching Figma style */}
+            <div className="w-full lg:max-w-md">
+              {subscribed ? (
+                <div
+                  className="p-4 rounded-xl text-sm font-semibold text-emerald-900 border border-emerald-300"
+                  style={{ backgroundColor: CREAM }}
+                >
+                  🎉 Thanks for joining! Check your inbox for your 10% discount.
+                </div>
+              ) : (
+                <form onSubmit={handleSubscribe} className="space-y-2">
+                  <div className="flex flex-col sm:flex-row items-stretch bg-white rounded-xl sm:rounded-full p-1.5 border border-[#c2bca8] shadow-sm">
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email..."
+                      placeholder="Your email address"
                       required
-                      className="bg-emerald-900/60 border border-emerald-800 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-emerald-400/60 focus:outline-none focus:border-emerald-500 flex-1"
+                      className="px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 bg-transparent border-none focus:outline-none flex-1"
                     />
                     <button
                       type="submit"
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 touch-active"
+                      className="inline-flex items-center justify-center gap-2 text-white text-sm font-semibold px-6 py-3 rounded-lg sm:rounded-full transition hover:opacity-95 touch-active shrink-0 mt-2 sm:mt-0"
+                      style={{ backgroundColor: GREEN_DARK }}
                     >
-                      Subscribe <Send className="w-3.5 h-3.5" />
+                      Count me in <Send className="w-4 h-4" />
                     </button>
-                  </form>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h4 className="serif-font font-bold text-white text-base sm:text-lg mb-3 sm:mb-4">Plant Collections</h4>
-              <ul className="space-y-2 text-sm text-emerald-200/70">
-                <li><Link to="/category/indoor-plants" className="hover:text-emerald-400 transition">Indoor Air Purifiers</Link></li>
-                <li><Link to="/category/outdoor-plants" className="hover:text-emerald-400 transition">Outdoor Garden Plants</Link></li>
-                <li><Link to="/category/pots-planters" className="hover:text-emerald-400 transition">Ceramic & Terracotta Pots</Link></li>
-                <li><Link to="/category/plant-care" className="hover:text-emerald-400 transition">Organic Plant Care & Fertilizers</Link></li>
-                <li><Link to="/category/seeds-bulbs" className="hover:text-emerald-400 transition">Exotic Flower & Herb Seeds</Link></li>
-                <li><Link to="/products" className="hover:text-emerald-400 transition">Best Seller Plants</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="serif-font font-bold text-white text-base sm:text-lg mb-3 sm:mb-4">Services & Help</h4>
-              <ul className="space-y-2 text-sm text-emerald-200/70">
-                <li><Link to="/proposals" className="hover:text-emerald-400 transition">Custom Landscape Proposals</Link></li>
-                <li><Link to="/gallery" className="hover:text-emerald-400 transition">Nursery Project Gallery</Link></li>
-                <li><Link to="/contact" className="hover:text-emerald-400 transition">Contact Botanist Support</Link></li>
-                <li><Link to="/orders" className="hover:text-emerald-400 transition">Track Your Order</Link></li>
-                <li><Link to="/profile" className="hover:text-emerald-400 transition">My Account Profile</Link></li>
-                <li><a href="#plant-quiz" className="hover:text-emerald-400 transition">Plant Match Quiz</a></li>
-              </ul>
-            </div>
-
-            {/* Contact Details */}
-            <div>
-              <h4 className="serif-font font-bold text-white text-base sm:text-lg mb-3 sm:mb-4">Nursery Location</h4>
-              <ul className="space-y-2.5 text-sm text-emerald-200/70">
-                <li className="flex items-start gap-2.5">
-                  <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <span>GreenBeli Botanical Hub, Sector 18, City Gardens, India</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Phone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>+91 98765 43210</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>support@greenbeli.in</span>
-                </li>
-              </ul>
-
-              <div className="mt-4 sm:mt-6 flex items-center gap-3">
-                <a href="#" className="w-8 h-8 rounded-full bg-emerald-900 flex items-center justify-center text-emerald-300 hover:bg-emerald-700 hover:text-white transition">
-                  <Globe className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-emerald-900 flex items-center justify-center text-emerald-300 hover:bg-emerald-700 hover:text-white transition">
-                  <Share2 className="w-4 h-4" />
-                </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-emerald-900 flex items-center justify-center text-emerald-300 hover:bg-emerald-700 hover:text-white transition">
-                  <Sparkles className="w-4 h-4" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom copyright */}
-          <div className="pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between text-sm text-emerald-400/60 gap-3">
-            <p>© {new Date().getFullYear()} GreenBeli Nursery Store. All Rights Reserved.</p>
-            <div className="flex items-center gap-1">
-              <span>Crafted with</span>
-              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-              <span>for Plant Lovers.</span>
+                  </div>
+                  <p className="text-[12px] text-slate-500 pl-2">
+                    Just the good stuff. Unsubscribe whenever you like.
+                  </p>
+                </form>
+              )}
             </div>
           </div>
         </div>
-      </RevealGroup>
+      </div>
 
+      {/* ------------------------------------------------------------- */}
+      {/* 2. Main Dark Footer (Matches Green Section in Figma)         */}
+      {/* ------------------------------------------------------------- */}
+      <div
+        className="text-emerald-100/80 pt-16 sm:pt-20 pb-12"
+        style={{ backgroundColor: GREEN_DARK }}
+      >
+        <RevealGroup effect="fadeUp" stagger={0.1}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-12 sm:space-y-16">
+
+            {/* Main Columns Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12">
+
+              {/* Col 1: Brand Logo & Tagline */}
+              <div className="lg:col-span-2 space-y-4">
+                <Link to="/" className="inline-flex items-center gap-2 text-white">
+                  <Sprout className="w-6 h-6 text-emerald-400" />
+                  <span className="serif-font text-2xl font-bold tracking-tight">
+                    Greenbeli
+                  </span>
+                </Link>
+
+                <p className="text-sm text-emerald-200/70 max-w-xs leading-relaxed">
+                  A little closer to nature. A little more at home.
+                </p>
+
+                {/* Social / Utility Icons from original imports */}
+                <div className="flex items-center gap-3 pt-2">
+                  <a
+                    href="#"
+                    aria-label="Website"
+                    className="w-8 h-8 rounded-full border border-emerald-800 flex items-center justify-center text-emerald-300 hover:bg-emerald-800 hover:text-white transition"
+                  >
+                    <Globe className="w-4 h-4" />
+                  </a>
+                  <a
+                    href="#"
+                    aria-label="Share"
+                    className="w-8 h-8 rounded-full border border-emerald-800 flex items-center justify-center text-emerald-300 hover:bg-emerald-800 hover:text-white transition"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </a>
+                  <a
+                    href="#"
+                    aria-label="Features"
+                    className="w-8 h-8 rounded-full border border-emerald-800 flex items-center justify-center text-emerald-300 hover:bg-emerald-800 hover:text-white transition"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Col 2: Explore */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                  Explore
+                </h4>
+                <ul className="space-y-2.5 text-sm text-emerald-200/70">
+                  <li><Link to="/category/indoor-plants" className="hover:text-white transition">All plants</Link></li>
+                  <li><Link to="/category/pots-planters" className="hover:text-white transition">Pots & planters</Link></li>
+                  <li><Link to="/category/plant-care" className="hover:text-white transition">Tools & essentials</Link></li>
+                  <li><Link to="/gift-cards" className="hover:text-white transition">Gift cards</Link></li>
+                </ul>
+              </div>
+
+              {/* Col 3: Here to help */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                  Here to help
+                </h4>
+                <ul className="space-y-2.5 text-sm text-emerald-200/70">
+                  <li><Link to="/plant-care-guides" className="hover:text-white transition">Plant care guides</Link></li>
+                  <li><Link to="/shipping-returns" className="hover:text-white transition">Shipping & returns</Link></li>
+                  <li><Link to="/faqs" className="hover:text-white transition">FAQs</Link></li>
+                  <li><Link to="/contact" className="hover:text-white transition">Contact us</Link></li>
+                </ul>
+              </div>
+
+              {/* Col 4: Our world */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                  Our world
+                </h4>
+                <ul className="space-y-2.5 text-sm text-emerald-200/70">
+                  <li><Link to="/our-story" className="hover:text-white transition">Our story</Link></li>
+                  <li><Link to="/our-growers" className="hover:text-white transition">Our growers</Link></li>
+                  <li><Link to="/journal" className="hover:text-white transition">The journal</Link></li>
+                  <li><a href="mailto:hello@greenbeli.com" className="hover:text-white transition">hello@greenbeli.com</a></li>
+                </ul>
+              </div>
+
+            </div>
+
+            {/* Bottom Copyright & Fine Print Bar */}
+            <div className="pt-8 border-t border-emerald-900/80 flex flex-col sm:flex-row items-center justify-between text-xs text-emerald-300/50 gap-4">
+              <p>© {new Date().getFullYear()} Greenbeli. Rooted in the everyday.</p>
+
+              <div className="flex items-center gap-6">
+                <Link to="/privacy-policy" className="hover:text-emerald-200 transition">Privacy policy</Link>
+                <Link to="/terms-of-service" className="hover:text-emerald-200 transition">Terms of service</Link>
+              </div>
+
+              <div className="flex items-center gap-1 text-emerald-300/40">
+                <span>Made with</span>
+                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                <span>for plant lovers.</span>
+              </div>
+            </div>
+
+          </div>
+        </RevealGroup>
+      </div>
     </footer>
   );
 }

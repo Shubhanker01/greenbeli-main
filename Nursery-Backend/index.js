@@ -17,7 +17,7 @@ const leadsRoutes = require("./src/routes/leadsRoutes");
 const salesRoutes = require("./src/routes/salesRoutes");
 const testimonialRoutes = require("./src/routes/testimonialRoutes");
 const errorHandler = require("./src/middleware/errorMiddleware");
-
+const mfaRoutes = require("./src/routes/mfaRoutes");
 const app = express();
 const port = process.env.PORT || 5007;
 
@@ -54,7 +54,7 @@ const corsMiddleware = cors({
 });
 
 app.use(corsMiddleware);
-app.options("*", corsMiddleware); 
+app.options("*", corsMiddleware);
 app.use(express.json());
 app.use(cookieParser());
 
@@ -82,7 +82,7 @@ app.use("/api/sales", salesRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/proposals", proposalsRoutes);
 app.use("/api/leads", leadsRoutes);
-
+app.use("/api/mfa", mfaRoutes);
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
 });
@@ -91,7 +91,7 @@ app.use(errorHandler);
 
 // async function start() {
 //   await connectDb();
- 
+
 
 // start().catch((err) => {
 //   console.error("Fatal startup error:", err?.message || err);
@@ -99,9 +99,9 @@ app.use(errorHandler);
 // });
 
 app.use((req, res) => {
-    console.log("Route hit:", req.originalUrl);
-    res.status(404).json({ message: "Not found" });
+  console.log("Route hit:", req.originalUrl);
+  res.status(404).json({ message: "Not found" });
 });
- app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});

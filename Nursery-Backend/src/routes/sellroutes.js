@@ -1,16 +1,15 @@
 const express = require("express");
 const router = express.Router();
 
-const { authMiddleware } = require("../middleware/authMiddleware");
-const { requireRole } = require("../middleware/requireRole");
+const { requireAuth } = require("../middleware/authMiddleware");
 
 const { createSale, listSales, getSale, salesSummary, salesProductSummary } = require("../controllers/salesController");
 
 // Superadmin only (POS / sales reporting)
-router.get("/", authMiddleware, requireRole(["superadmin"]), listSales);
-router.get("/summary", authMiddleware, requireRole(["superadmin"]), salesSummary);
-router.get("/product-summary", authMiddleware, requireRole(["superadmin"]), salesProductSummary);
-router.get("/:id", authMiddleware, requireRole(["superadmin"]), getSale);
-router.post("/", authMiddleware, requireRole(["superadmin"]), createSale);
+router.get("/", requireAuth, listSales);
+router.get("/summary", requireAuth, salesSummary);
+router.get("/product-summary", requireAuth, salesProductSummary);
+router.get("/:id", requireAuth, getSale);
+router.post("/", requireAuth, createSale);
 
 module.exports = router;

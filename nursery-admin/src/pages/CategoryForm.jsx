@@ -10,8 +10,10 @@ export default function CategoryForm() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [image, setImage] = useState("");
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isEdit) {
@@ -20,7 +22,7 @@ export default function CategoryForm() {
         if (found) {
           setName(found.name || "");
           setDescription(found.description || "");
-          setImage(found.image || "");
+          setImagePreview(found.imageUrl || found.image || "");
         }
       });
     }
@@ -29,20 +31,22 @@ export default function CategoryForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    const slug = name.toLowerCase().replace(/\s+/g, "-");
-    const payload = { name, slug, description, image };
-
+    setError("");
     try {
       if (isEdit) {
-        await updateCategoryApi(id, payload);
+        await updateCategoryApi(id, { name, description });
       } else {
+        const payload = new FormData();
+        payload.append("name", name);
+        payload.append("description", description);
+        if (image) payload.append("image", image);
         await createCategoryApi(payload);
       }
       setSubmitting(false);
       navigate("/categories");
     } catch (e) {
       setSubmitting(false);
-      navigate("/categories");
+      setError(e.message || "Unable to save the category.");
     }
   };
 
@@ -55,6 +59,12 @@ export default function CategoryForm() {
       <h1 className="serif-font text-2xl font-bold text-slate-900">
         {isEdit ? "Edit Category" : "Add New Category"}
       </h1>
+
+      {error && (
+        <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-4 rounded-2xl">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm space-y-4">
         <div>
@@ -70,14 +80,20 @@ export default function CategoryForm() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Image URL</label>
+          <label className="block text-xs font-bold text-slate-700 mb-1">Category Image</label>
           <input
-            type="url"
-            value={image}
-            onChange={(e) => setImage(e.target.value)}
-            placeholder="https://images.unsplash.com/..."
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              setImage(file);
+              if (file) setImagePreview(URL.createObjectURL(file));
+            }}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
           />
+          {imagePreview && (
+            <img src={imagePreview} alt="Category preview" className="mt-3 h-24 w-24 rounded-xl object-cover" />
+          )}
         </div>
 
         <div>

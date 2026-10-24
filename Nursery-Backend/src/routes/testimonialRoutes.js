@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-const { authMiddleware } = require("../middleware/authMiddleware");
-const { requireRole } = require("../middleware/requireRole");
+const { requireAuth } = require("../middleware/authMiddleware");
+
 const {
   listPublicTestimonials,
   createTestimonial,
@@ -13,9 +13,9 @@ const {
 const upload = require("../../multer");
 
 router.get("/", listPublicTestimonials);
-router.post("/", authMiddleware,  upload.array("images")  ,createTestimonial);
-router.get("/admin", authMiddleware, requireRole(["admin", "superadmin"]), listAdminTestimonials);
-router.patch("/admin/:id/approval", authMiddleware, requireRole(["admin", "superadmin"]), setApproval);
-router.delete("/admin/:id", authMiddleware, requireRole(["admin", "superadmin"]), deleteTestimonial);
+router.post("/", requireAuth, createTestimonial);
+router.get("/admin", requireAuth, listAdminTestimonials);
+router.patch("/admin/:id/approval", requireAuth, setApproval);
+router.delete("/admin/:id", requireAuth, deleteTestimonial);
 
 module.exports = router;

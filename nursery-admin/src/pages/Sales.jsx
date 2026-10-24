@@ -1,36 +1,44 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Receipt, Plus, Trash2, Printer, CheckCircle2, IndianRupee } from "lucide-react";
-import { getAdminProductsApi, createSaleApi } from "../utils/adminApi";
+import { useNavigate } from "react-router-dom";
+import { Receipt, Plus, Trash2 } from "lucide-react";
+import { getPosProductsApi, createSaleApi } from "../utils/adminApi";
 
 export default function Sales() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
 
   const [saleItems, setSaleItems] = useState([
-    { productId: "", name: "", price: 0, quantity: 1 },
+    { productId: "", quantity: 1 },
   ]);
 
-  const [generatedReceipt, setGeneratedReceipt] = useState(null);
-
   useEffect(() => {
-    getAdminProductsApi().then(setProducts);
+    let active = true;
+    getPosProductsApi()
+      .then((items) => {
+        if (active) setProducts(items.filter((product) => product.isActive !== false));
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message || "Unable to load products.");
+      })
+      .finally(() => {
+        if (active) setLoadingProducts(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleProductSelect = (index, prodId) => {
-    const found = products.find((p) => p._id === prodId);
     setSaleItems((prev) =>
       prev.map((item, idx) =>
         idx === index
-          ? {
-              ...item,
-              productId: prodId,
-              name: found?.name || "Plant Item",
-              price: found?.price || 499,
-            }
+          ? { ...item, productId: prodId }
           : item
       )
     );
@@ -43,33 +51,41 @@ export default function Sales() {
   };
 
   const addItemRow = () => {
-    setSaleItems([...saleItems, { productId: "", name: "", price: 0, quantity: 1 }]);
+    setSaleItems((items) => [...items, { productId: "", quantity: 1 }]);
   };
 
   const removeItemRow = (index) => {
-    setSaleItems(saleItems.filter((_, idx) => idx !== index));
+    setSaleItems((items) => items.filter((_, idx) => idx !== index));
   };
 
-  const totalAmount = saleItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const selectedLines = saleItems.map((item) => {
+    const product = products.find((candidate) => candidate._id === item.productId);
+    const basePrice = Number(product?.price || 0);
+    const discount = Number(product?.discount || 0);
+    const unitPrice = product?.discountType === "percent"
+      ? Math.max(0, basePrice - (basePrice * discount) / 100)
+      : Math.max(0, basePrice - discount);
+    return { ...item, product, unitPrice };
+  });
+  const totalAmount = selectedLines.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
   const handleCreateSale = async (e) => {
     e.preventDefault();
-    const receiptData = {
-      receiptNo: `REC-${Math.floor(100000 + Math.random() * 900000)}`,
-      customerName: customerName || "Walk-in Customer",
-      customerPhone: customerPhone || "N/A",
-      paymentMethod,
-      items: saleItems,
-      totalAmount,
-      date: new Date().toLocaleDateString("en-IN"),
-    };
-
+    setError("");
+    setSubmitting(true);
     try {
-      await createSaleApi(receiptData);
-    } catch (e) {
-      // smooth
+      const sale = await createSaleApi({
+        customerName: customerName.trim() || "Walk-in Customer",
+        customerPhone: customerPhone.trim(),
+        paymentMethod,
+        items: saleItems.map(({ productId, quantity }) => ({ productId, quantity })),
+      });
+      if (!sale?._id) throw new Error("Sale was created but no receipt ID was returned.");
+      navigate(`/sales/${sale._id}`);
+    } catch (requestError) {
+      setError(requestError.message || "Unable to create the sale.");
     } finally {
-      setGeneratedReceipt(receiptData);
+      setSubmitting(false);
     }
   };
 
@@ -84,54 +100,12 @@ export default function Sales() {
         </h1>
       </div>
 
-      {generatedReceipt ? (
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-2 text-emerald-800">
-              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-              <h2 className="serif-font font-bold text-xl">Sale Receipt Issued</h2>
-            </div>
-            <button
-              onClick={() => window.print()}
-              className="bg-emerald-800 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5"
-            >
-              <Printer className="w-4 h-4" /> Print Receipt
-            </button>
-          </div>
-
-          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-xs space-y-4">
-            <div className="flex justify-between font-bold text-slate-900">
-              <span>Receipt No: #{generatedReceipt.receiptNo}</span>
-              <span>Date: {generatedReceipt.date}</span>
-            </div>
-            <div>
-              <p><b>Customer:</b> {generatedReceipt.customerName} ({generatedReceipt.customerPhone})</p>
-              <p><b>Payment Mode:</b> {generatedReceipt.paymentMethod}</p>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-slate-200">
-              {generatedReceipt.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between">
-                  <span>{item.name} x {item.quantity}</span>
-                  <span className="font-bold">₹{item.price * item.quantity}</span>
-                </div>
-              ))}
-              <div className="flex justify-between text-sm font-extrabold text-emerald-950 pt-2 border-t border-slate-200">
-                <span>Total Amount Paid</span>
-                <span>₹{generatedReceipt.totalAmount}</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setGeneratedReceipt(null)}
-            className="w-full bg-slate-100 text-slate-700 font-bold text-xs py-3 rounded-xl hover:bg-slate-200"
-          >
-            Create Another Counter Sale
-          </button>
+      {error && (
+        <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-4 rounded-2xl">
+          {error}
         </div>
-      ) : (
-        <form onSubmit={handleCreateSale} className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm space-y-6">
+      )}
+      <form onSubmit={handleCreateSale} className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm space-y-6">
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
@@ -183,17 +157,18 @@ export default function Sales() {
               </button>
             </div>
 
-            {saleItems.map((item, idx) => (
+            {selectedLines.map((item, idx) => (
               <div key={idx} className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
                 <select
+                  required
                   value={item.productId}
                   onChange={(e) => handleProductSelect(idx, e.target.value)}
                   className="flex-1 bg-white border border-slate-200 rounded-xl p-2 text-xs text-slate-800"
                 >
-                  <option value="">Select Plant Product...</option>
-                  {products.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.name} - ₹{p.price}
+                  <option value="">{loadingProducts ? "Loading products..." : "Select Plant Product..."}</option>
+                  {products.filter((product) => product.stock > 0 || product._id === item.productId).map((product) => (
+                    <option key={product._id} value={product._id} disabled={product.stock <= 0}>
+                      {product.name} - ₹{product.price} ({product.stock} in stock)
                     </option>
                   ))}
                 </select>
@@ -201,13 +176,14 @@ export default function Sales() {
                 <input
                   type="number"
                   min={1}
+                  max={item.product?.stock}
                   value={item.quantity}
                   onChange={(e) => updateQuantity(idx, Number(e.target.value))}
                   className="w-16 bg-white border border-slate-200 rounded-xl p-2 text-xs text-center font-bold"
                 />
 
                 <span className="w-20 text-right text-xs font-extrabold text-slate-900">
-                  ₹{item.price * item.quantity}
+                  ₹{item.unitPrice * item.quantity}
                 </span>
 
                 {saleItems.length > 1 && (
@@ -231,13 +207,13 @@ export default function Sales() {
 
             <button
               type="submit"
-              className="bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-xs px-8 py-3.5 rounded-2xl shadow-lg transition flex items-center gap-2"
+              disabled={submitting || loadingProducts || products.length === 0}
+              className="bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white font-extrabold text-xs px-8 py-3.5 rounded-2xl shadow-lg transition flex items-center gap-2"
             >
-              <Receipt className="w-4 h-4" /> Generate Receipt
+              <Receipt className="w-4 h-4" /> {submitting ? "Processing Sale..." : "Complete Sale"}
             </button>
           </div>
-        </form>
-      )}
+      </form>
     </div>
   );
 }

@@ -5,7 +5,6 @@ import {
   ShoppingBag, 
   Sprout, 
   PhoneCall, 
-  Users, 
   TrendingUp, 
   Plus, 
   ArrowUpRight, 
@@ -18,13 +17,20 @@ import { getDashboardStatsApi, updateOrderStatusApi } from "../utils/adminApi";
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const data = await getDashboardStatsApi();
-      setStats(data);
-      setLoading(false);
+      setError("");
+      try {
+        const data = await getDashboardStatsApi();
+        setStats(data);
+      } catch (requestError) {
+        setError(requestError.message || "Unable to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
     }
     loadData();
   }, []);
@@ -39,17 +45,23 @@ export default function Dashboard() {
         ),
       }));
     } catch (e) {
-      setStats((prev) => ({
-        ...prev,
-        recentOrders: prev.recentOrders.map((o) =>
-          o._id === orderId ? { ...o, status: newStatus } : o
-        ),
-      }));
+      setError(e.message || "Unable to update order status.");
     }
   };
 
   return (
     <div className="space-y-8">
+      {error && (
+        <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-4 rounded-2xl">
+          {error}
+        </div>
+      )}
+      {loading && (
+        <p role="status" className="text-xs text-slate-500">
+          Loading current dashboard data...
+        </p>
+      )}
+
       {/* Welcome Title */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -90,10 +102,10 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="serif-font text-3xl font-bold text-slate-900">
-              ₹{stats?.totalRevenue ? stats.totalRevenue.toLocaleString("en-IN") : "1,48,900"}
+              ₹{(stats?.totalRevenue ?? 0).toLocaleString("en-IN")}
             </h3>
             <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
-              <TrendingUp className="w-3.5 h-3.5" /> +18.4% from last month
+              <TrendingUp className="w-3.5 h-3.5" /> Orders and counter sales
             </span>
           </div>
         </div>
@@ -108,10 +120,10 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="serif-font text-3xl font-bold text-slate-900">
-              {stats?.totalOrders || 142}
+              {stats?.totalOrders ?? 0}
             </h3>
             <span className="text-[11px] text-sky-600 font-bold flex items-center gap-1 mt-1">
-              <Clock className="w-3.5 h-3.5" /> 12 Pending Shipments
+              <Clock className="w-3.5 h-3.5" /> {stats?.pendingOrders ?? 0} Pending Shipments
             </span>
           </div>
         </div>
@@ -126,10 +138,10 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="serif-font text-3xl font-bold text-slate-900">
-              {stats?.totalProducts || 28}
+              {stats?.totalProducts ?? 0}
             </h3>
             <span className="text-[11px] text-amber-600 font-bold flex items-center gap-1 mt-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> 3 Low Stock Items
+              <AlertTriangle className="w-3.5 h-3.5" /> Currently active in catalog
             </span>
           </div>
         </div>
@@ -144,10 +156,10 @@ export default function Dashboard() {
           </div>
           <div>
             <h3 className="serif-font text-3xl font-bold text-slate-900">
-              {stats?.activeLeads || 12}
+              {stats?.inquiryLeads ?? 0}
             </h3>
             <span className="text-[11px] text-purple-600 font-bold flex items-center gap-1 mt-1">
-              +4 New Today
+              Total submitted inquiries
             </span>
           </div>
         </div>

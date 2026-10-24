@@ -1,6 +1,11 @@
 import { ShieldCheck, Truck, Award, HelpCircle } from "lucide-react"
 import { Reveal, RevealGroup } from "./Reveal" // adjust path to where you saved Reveal.jsx
 
+/* Palette from the Figma design (same values as the hero) */
+const GREEN = "#1f4a34"
+const CREAM = "#f6f3ea"
+const SAGE = "#cfe3c8"
+
 const FEATURES = [
     {
         icon: ShieldCheck,
@@ -28,52 +33,59 @@ function BotanicalSection() {
     return (
         <div>
             <section className="max-w-7xl mx-auto px-4 sm:px-8">
-                {/* Deep terracotta / soil panel: a warm dark counterpart to the light glass sections.
+                {/* Deep green band: the dark counterpart to the cream sections.
+                    The large top-left curve echoes the hero photo.
                     (Plain div on purpose: each block inside reveals on its own scroll position.) */}
-                <div className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-orange-950/95 via-stone-900/95 to-stone-950 backdrop-blur-sm text-white shadow-2xl shadow-stone-900/30 border border-orange-900/40 ring-1 ring-white/5 p-5 sm:p-10 lg:p-14">
-                    {/* Ambient glows */}
-                    <div className="pointer-events-none absolute -top-24 -left-24 w-80 h-80 rounded-full bg-orange-600/20 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-28 -right-20 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl" />
+                <div
+                    style={{ backgroundColor: GREEN, color: CREAM }}
+                    className="relative overflow-hidden rounded-tl-[4.5rem] sm:rounded-tl-[8rem] lg:rounded-tl-[10rem] rounded-tr-xl rounded-b-xl shadow-2xl shadow-emerald-950/25 p-6 sm:p-10 lg:p-14"
+                >
+                    {/* Soft light wash so the green isn't flat */}
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.10),transparent_60%)]"
+                    />
 
                     <div className="relative z-10">
-                        {/* Header */}
-                        <Reveal className="text-center max-w-4xl mx-auto mb-8 sm:mb-12 space-y-3 sm:space-y-4">
-                            <span className="inline-block bg-orange-500/15 border border-orange-400/30 text-orange-200 text-xs sm:text-sm font-bold px-4 py-1.5 sm:py-2 rounded-full uppercase tracking-wider">
+                        {/* Header: left-aligned like the rest of the Figma sections */}
+                        <Reveal className="max-w-4xl mb-10 sm:mb-14 pt-6 sm:pt-4 space-y-3 sm:space-y-4">
+                            <p style={{ color: SAGE }} className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em]">
                                 GreenBeli Quality Standard
-                            </span>
-                            <h2 className="serif-font text-3xl sm:text-5xl font-bold leading-tight">
+                            </p>
+                            <h2 className="serif-font text-3xl sm:text-5xl font-bold leading-[1.1] tracking-tight">
                                 Why Thousands Trust{" "}
-                                <span className="text-orange-300 italic">Our Nursery</span>
+                                <span style={{ color: SAGE }} className="italic">Our Nursery</span>
                             </h2>
-                            <p className="text-sm sm:text-lg text-stone-300 leading-relaxed max-w-2xl mx-auto">
+                            <p className="text-base sm:text-lg leading-relaxed max-w-2xl" style={{ color: `${CREAM}c7` }}>
                                 We take extreme care in growing, packaging, and supporting your plant parent journey.
                             </p>
                         </Reveal>
 
-                        {/* Feature cards: reveal one after another */}
-                        <RevealGroup stagger={0.12} delay={0.05} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+                        {/* Features: open columns separated by hairlines, no card boxes */}
+                        <RevealGroup stagger={0.12} delay={0.05} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-10 sm:gap-y-12">
                             {FEATURES.map(({ icon: Icon, title, desc }, i) => (
-                                <Reveal key={title} effect="card" className="h-full">
-                                    {/* Reveal owns the entrance transform; this card keeps its own hover lift */}
-                                    <div className="group relative h-full overflow-hidden bg-white/5 backdrop-blur-md p-6 sm:p-7 rounded-2xl sm:rounded-3xl border border-white/10 shadow-lg transition duration-300 hover:bg-white/10 hover:border-orange-300/30 hover:-translate-y-1 hover:shadow-2xl">
-                                        {/* Faint step number for rhythm */}
+                                <Reveal
+                                    key={title}
+                                    className={`group relative ${i > 0 ? "pt-8" : ""} sm:pt-0 ${i > 0 ? "border-t border-white/15 sm:border-t-0" : ""} ${i % 2 === 1 ? "sm:border-l sm:border-white/15 sm:pl-8" : "sm:pr-8"} ${i > 0 ? "lg:border-l lg:border-white/15 lg:pl-8" : ""} ${i < 3 ? "lg:pr-8" : ""}`}
+                                >
+                                    <div className="flex items-center gap-4 mb-5">
                                         <span
-                                            aria-hidden="true"
-                                            className="serif-font absolute top-3 right-5 text-5xl sm:text-6xl font-bold text-white/[0.06] select-none"
+                                            style={{ borderColor: `${CREAM}4d` }}
+                                            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border flex items-center justify-center transition-colors duration-300 group-hover:bg-[#f6f3ea] group-hover:text-[#1f4a34]"
                                         >
+                                            <Icon className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.6} />
+                                        </span>
+                                        <span style={{ color: SAGE }} className="serif-font text-lg font-bold tracking-widest opacity-70">
                                             {String(i + 1).padStart(2, "0")}
                                         </span>
-
-                                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 text-stone-950 flex items-center justify-center shadow-lg shadow-orange-900/40 mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
-                                            <Icon className="w-7 h-7 sm:w-8 sm:h-8" />
-                                        </div>
-                                        <h3 className="relative text-lg sm:text-xl font-bold text-orange-50 leading-snug mb-2">
-                                            {title}
-                                        </h3>
-                                        <p className="relative text-sm sm:text-base text-stone-300 leading-relaxed">
-                                            {desc}
-                                        </p>
                                     </div>
+
+                                    <h3 className="serif-font text-xl sm:text-2xl font-bold leading-snug mb-2">
+                                        {title}
+                                    </h3>
+                                    <p className="text-base leading-relaxed" style={{ color: `${CREAM}bf` }}>
+                                        {desc}
+                                    </p>
                                 </Reveal>
                             ))}
                         </RevealGroup>

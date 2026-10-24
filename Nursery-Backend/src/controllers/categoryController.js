@@ -1,6 +1,17 @@
 const mongoose = require("mongoose");
 const Category = require("../models/Categories");
 const asyncHandler = require("../utils/asyncHandler");
+const { uploadImage, deleteImages } = require("../utils/supabaseStorage");
+
+function createCategorySlug(name) {
+  return name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 const pickDefined = (obj) => {
   const out = {};
@@ -9,6 +20,16 @@ const pickDefined = (obj) => {
   });
   return out;
 };
+
+
+const getLatestCategories = asyncHandler(async (req, res) => {
+  // Fetch latest 6 categories (sorting by createdAt descending, or _id descending if timestamps aren't used)
+  const items = await Category.find()
+    .sort({ createdAt: -1 })
+    .limit(6);
+
+  return res.status(200).json(items);
+});
 
 const listCategories = asyncHandler(async (req, res) => {
   const { active, kind, parent } = req.query || {};
@@ -23,8 +44,9 @@ const listCategories = asyncHandler(async (req, res) => {
   }
 
   const items = await Category.find(filter)
-    .sort({ sortOrder: 1, name: 1 })
+    .sort({ createdAt: -1 })
     .populate("parentCategory", "name slug")
+    .limit()
     .lean();
 
   res.json({ items });
@@ -70,14 +92,12 @@ const createCategory = asyncHandler(async (req, res) => {
   const {
     name,
     description,
-    slug,
     subcategories,
     Id,
     kind,
     plantSegment,
     parentCategory,
-    coverImage,
-    coverImages,
+    imageUrl,
     iconKey,
     sortOrder,
     metaTitle,
@@ -86,8 +106,16 @@ const createCategory = asyncHandler(async (req, res) => {
     isActive,
   } = body;
 
-  if (!name || typeof name !== "string") {
+  if (typeof name !== "string" || !name.trim()) {
     const err = new Error("name is required");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const normalizedName = name.trim();
+  const slug = createCategorySlug(normalizedName);
+  if (!slug) {
+    const err = new Error("name must contain letters or numbers to generate a slug");
     err.statusCode = 400;
     throw err;
   }
@@ -101,44 +129,37 @@ const createCategory = asyncHandler(async (req, res) => {
     throw err;
   }
 
-  const created = await Category.create({
-    Id,
-    name: name.trim(),
-    description:
-      description === undefined ? undefined : String(description).trim(),
-    slug: slug === undefined ? undefined : String(slug).toLowerCase().trim(),
-    subcategories: Array.isArray(subcategories) ? subcategories : [],
-    kind: kind || "Plants",
-    plantSegment: plantSegment === undefined ? "" : String(plantSegment),
-    parentCategory: parentCategory || null,
-    // Support both legacy single `coverImage` and new `coverImages[]`
-    coverImages: (() => {
-      if (Array.isArray(coverImages)) {
-        return coverImages
-          .map((s) => (typeof s === "string" ? s.trim() : ""))
-          .filter(Boolean);
-      }
-      if (coverImage !== undefined && coverImage !== null && String(coverImage).trim()) {
-        return [String(coverImage).trim()];
-      }
-      return [];
-    })(),
-    coverImage:
-      typeof coverImage === "string" && coverImage.trim()
-        ? coverImage.trim()
-        : Array.isArray(coverImages) && coverImages.length
-          ? String(coverImages[0]).trim()
-          : "",
-    iconKey: iconKey === undefined ? "" : String(iconKey).trim(),
-    sortOrder: sortOrder === undefined ? 0 : Number(sortOrder),
-    isActive: isActive === undefined ? true : Boolean(isActive),
-    metaTitle: metaTitle === undefined ? "" : String(metaTitle).trim(),
-    metaDescription:
-      metaDescription === undefined ? "" : String(metaDescription).trim(),
-    metaKeywords: Array.isArray(metaKeywords)
-      ? metaKeywords.map((k) => String(k).trim()).filter(Boolean)
-      : [],
-  });
+  const uploadedImage = req.file
+    ? await uploadImage(req.file, { folder: "categories" })
+    : null;
+
+  let created;
+  try {
+    created = await Category.create({
+      Id,
+      name: normalizedName,
+      description:
+        description === undefined ? undefined : String(description).trim(),
+      slug,
+      subcategories: Array.isArray(subcategories) ? subcategories : [],
+      kind: kind || "Plants",
+      plantSegment: plantSegment === undefined ? "" : String(plantSegment),
+      parentCategory: parentCategory || null,
+      imageUrl: uploadedImage?.url || (imageUrl === undefined ? "" : String(imageUrl).trim()),
+      iconKey: iconKey === undefined ? "" : String(iconKey).trim(),
+      sortOrder: sortOrder === undefined ? 0 : Number(sortOrder),
+      isActive: isActive === undefined ? true : Boolean(isActive),
+      metaTitle: metaTitle === undefined ? "" : String(metaTitle).trim(),
+      metaDescription:
+        metaDescription === undefined ? "" : String(metaDescription).trim(),
+      metaKeywords: Array.isArray(metaKeywords)
+        ? metaKeywords.map((k) => String(k).trim()).filter(Boolean)
+        : [],
+    });
+  } catch (err) {
+    if (uploadedImage) await deleteImages([uploadedImage.path]);
+    throw err;
+  }
 
   const populated = await Category.findById(created._id).populate(
     "parentCategory",
@@ -262,6 +283,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  getLatestCategories,
   listCategories,
   getCategoryById,
   getCategoryBySlug,

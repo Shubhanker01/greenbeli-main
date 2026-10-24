@@ -55,7 +55,7 @@ export default function Categories() {
               className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm flex items-start gap-4"
             >
               <img
-                src={cat.image || "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=200&q=80"}
+                src={cat.imageUrl || cat.image || "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=200&q=80"}
                 alt={cat.name}
                 className="w-16 h-16 rounded-2xl object-cover bg-emerald-50 flex-shrink-0"
               />

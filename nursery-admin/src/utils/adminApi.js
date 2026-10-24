@@ -1,27 +1,25 @@
 // Centralized Admin API Client
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5008/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5007/api";
 
-const getAdminAuthHeaders = () => {
-  const token = localStorage.getItem("nursery_admin_token");
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
 
 export async function adminFetch(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
-  const config = {
-    headers: getAdminAuthHeaders(),
-    ...options,
-  };
+  const headers = new Headers(options.headers);
+  if (typeof options.body === "string" && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
   try {
-    const res = await fetch(url, config);
-    const data = await res.json();
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+    const responseText = await res.text();
+    const data = responseText ? JSON.parse(responseText) : null;
     if (!res.ok) {
-      throw new Error(data.message || `Admin request failed with status ${res.status}`);
+      throw new Error(data?.message || `Admin request failed with status ${res.status}`);
     }
     return data;
   } catch (err) {
@@ -29,20 +27,6 @@ export async function adminFetch(endpoint, options = {}) {
     throw err;
   }
 }
-
-// Fallback Seeds for Offline / Initial State
-export const MOCK_DASHBOARD_STATS = {
-  totalRevenue: 148900,
-  totalOrders: 142,
-  totalProducts: 28,
-  activeLeads: 12,
-  totalCustomers: 89,
-  recentOrders: [
-    { _id: "ORD-984210", customerName: "Rajat Singh", totalAmount: 1398, status: "Processing", createdAt: "2026-07-25T10:30:00Z" },
-    { _id: "ORD-978112", customerName: "Ananya Sharma", totalAmount: 649, status: "Delivered", createdAt: "2026-07-24T14:15:00Z" },
-    { _id: "ORD-971004", customerName: "Vikram Malhotra", totalAmount: 2499, status: "Shipped", createdAt: "2026-07-23T09:00:00Z" },
-  ],
-};
 
 // Admin Login
 export async function loginAdminApi(email, password) {
@@ -54,36 +38,40 @@ export async function loginAdminApi(email, password) {
 
 // Dashboard Stats
 export async function getDashboardStatsApi() {
-  try {
-    const data = await adminFetch("/admin/stats");
-    return data;
-  } catch (e) {
-    return MOCK_DASHBOARD_STATS;
-  }
+  return adminFetch("/admin/stats");
 }
 
 // Products Management
 export async function getAdminProductsApi() {
   try {
     const data = await adminFetch("/products");
-    if (Array.isArray(data)) return data;
-    if (data?.products) return data.products;
+    if (Array.isArray(data.items)) return data.items;
     return [];
-  } catch (e) {
+  } catch {
     return [];
   }
 }
 
-export async function addProductApi(formData) {
-  const token = localStorage.getItem("nursery_admin_token");
+export async function getPosProductsApi() {
+  const data = await adminFetch("/products");
+  return Array.isArray(data.items) ? data.items : [];
+}
+
+export async function addProductApi(formData, authStatus) {
+  if (authStatus !== "ok") {
+    throw new Error("A verified admin session is required to add products.");
+  }
+
   const res = await fetch(`${BASE_URL}/products/add`, {
     method: "POST",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    credentials: "include",
     body: formData,
   });
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || `Product request failed with status ${res.status}`);
+  }
+  return data;
 }
 
 export async function updateProductApi(id, productData) {
@@ -103,10 +91,9 @@ export async function deleteProductApi(id) {
 export async function getAdminCategoriesApi() {
   try {
     const data = await adminFetch("/categories");
-    if (Array.isArray(data)) return data;
-    if (data?.categories) return data.categories;
+    if (Array.isArray(data.items)) return data.items;
     return [];
-  } catch (e) {
+  } catch {
     return [];
   }
 }
@@ -114,7 +101,7 @@ export async function getAdminCategoriesApi() {
 export async function createCategoryApi(categoryData) {
   return await adminFetch("/categories", {
     method: "POST",
-    body: JSON.stringify(categoryData),
+    body: categoryData,
   });
 }
 
@@ -133,20 +120,14 @@ export async function deleteCategoryApi(id) {
 
 // Orders Management
 export async function getAdminOrdersApi() {
-  try {
-    const data = await adminFetch("/admin/orders");
-    if (Array.isArray(data)) return data;
-    if (data?.orders) return data.orders;
-    return MOCK_DASHBOARD_STATS.recentOrders;
-  } catch (e) {
-    return MOCK_DASHBOARD_STATS.recentOrders;
-  }
+  const data = await adminFetch("/admin/orders");
+  return Array.isArray(data.items) ? data.items : [];
 }
 
 export async function updateOrderStatusApi(id, status) {
   return await adminFetch(`/admin/orders/${id}/status`, {
     method: "PATCH",
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ orderStatus: status }),
   });
 }
 
@@ -154,7 +135,7 @@ export async function updateOrderStatusApi(id, status) {
 export async function getAdminCustomersApi() {
   try {
     return await adminFetch("/admin/users");
-  } catch (e) {
+  } catch {
     return [
       { _id: "usr-1", name: "Ananya Sharma", email: "ananya@example.com", phone: "+91 98765 43210", role: "customer", createdAt: "2026-06-12" },
       { _id: "usr-2", name: "Vikram Malhotra", email: "vikram@example.com", phone: "+91 98765 43211", role: "customer", createdAt: "2026-05-19" },
@@ -173,7 +154,7 @@ export async function createCustomerApi(userData) {
 export async function getAdminLeadsApi() {
   try {
     return await adminFetch("/admin/leads");
-  } catch (e) {
+  } catch {
     return [
       { _id: "lead-1", name: "Suresh Raina", email: "suresh@example.com", phone: "+91 91234 56789", subject: "Bulk Corporate Plants", message: "Need 50 indoor office planters for new Gurgaon campus.", status: "New", createdAt: "2026-07-25" },
     ];
@@ -191,7 +172,7 @@ export async function updateLeadStatusApi(id, status) {
 export async function getAdminProposalsApi() {
   try {
     return await adminFetch("/proposals");
-  } catch (e) {
+  } catch {
     return [
       { _id: "prop-1", name: "Neha Gupta", email: "neha@example.com", phone: "+91 99887 76655", projectType: "Villa Garden", estimatedBudget: "₹25,000 - ₹50,000", requirements: "Complete lawn turfing and palm tree installation", status: "Pending", createdAt: "2026-07-24" },
     ];
@@ -209,7 +190,7 @@ export async function updateProposalApi(id, status) {
 export async function getAdminTestimonialsApi() {
   try {
     return await adminFetch("/testimonials/admin");
-  } catch (e) {
+  } catch {
     return [
       { _id: "t-1", name: "Ananya Sharma", role: "Interior Designer", comment: "Outstanding plant quality!", rating: 5, isApproved: true },
       { _id: "t-2", name: "Kunal Kapoor", role: "Architect", comment: "Great packaging and fast shipping.", rating: 4, isApproved: false },
@@ -236,4 +217,8 @@ export async function createSaleApi(saleData) {
     method: "POST",
     body: JSON.stringify(saleData),
   });
+}
+
+export async function getSaleApi(id) {
+  return adminFetch(`/sales/${id}`);
 }
