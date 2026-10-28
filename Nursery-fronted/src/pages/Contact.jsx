@@ -194,6 +194,28 @@ export default function Contact() {
         </div>
       </div>
 
+      <section className="space-y-5">
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+            Visit us
+          </p>
+          <h2 className="serif-font text-3xl font-bold text-slate-900">
+            Find GreenBeli Gardeniya
+          </h2>
+        </div>
+        <div className="overflow-hidden rounded-3xl border border-emerald-100 shadow-sm">
+          <iframe
+            title="Map showing GreenBeli Gardeniya"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3521.2612989202153!2d76.700684!3d28.047045200000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d4d083178d5cb%3A0xce5f7399909f8a00!2sGreenBeli%20Gardeniya!5e0!3m2!1sen!2sin!4v1793181617355!5m2!1sen!2sin"
+            className="block h-[320px] w-full sm:h-[450px]"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        </div>
+      </section>
+
       {/* FAQ Accordion */}
       <div className="bg-white rounded-3xl p-8 border border-emerald-100 shadow-sm space-y-6">
         <h3 className="serif-font text-3xl font-bold text-slate-900 flex items-center gap-2">

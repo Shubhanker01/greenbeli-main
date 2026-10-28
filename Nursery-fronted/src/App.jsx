@@ -19,6 +19,10 @@ import About from "./pages/About";
 import OurStory from "./pages/OurStory";
 import OurJournal from "./pages/OurJournal";
 import OurGrowers from "./pages/OurGrowers";
+import PlantCareGuides from "./pages/PlantCareGuides";
+import ShippingReturns from "./pages/ShippingReturns";
+import FAQs from "./pages/FAQs";
+import GiftCards from "./pages/GiftCards";
 import Gallery from "./pages/Gallery";
 import Proposals from "./pages/Proposals";
 import Testimonials from "./pages/Testimonials";
@@ -48,6 +52,10 @@ export default function App() {
               <Route path="/our-story" element={<OurStory />} />
               <Route path="/journal" element={<OurJournal />} />
               <Route path="/our-growers" element={<OurGrowers />} />
+              <Route path="/plant-care-guides" element={<PlantCareGuides />} />
+              <Route path="/shipping-returns" element={<ShippingReturns />} />
+              <Route path="/faqs" element={<FAQs />} />
+              <Route path="/gift-cards" element={<GiftCards />} />
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/proposals" element={<Proposals />} />
               <Route path="/testimonials" element={<Testimonials />} />

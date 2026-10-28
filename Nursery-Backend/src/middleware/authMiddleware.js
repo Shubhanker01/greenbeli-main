@@ -35,6 +35,25 @@ const requireAuth = async (req, res, next) => {
   }
 };
 
+
+const requireUser = async (req, res, next) => {
+  try {
+    res.set("Cache-Control", "no-store");
+    const supabase = createClient(req, res);
+
+    // getUser() validates the token with Supabase. Don't trust getSession() on the server.
+    const { data, error } = await supabase.auth.getUser();
+    const user = data?.user;
+    if (error || !user) return res.status(401).json({ success: false, code: "UNAUTHENTICATED" });
+    req.user = user;
+    next();
+
+  }
+  catch (err) {
+    res.status(500).json({ success: false, code: "SERVER_ERROR" })
+  }
+}
+
 const authMiddleware = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -107,5 +126,5 @@ const isSuperAdmin = (req, res, next) => {
 };
 
 
-module.exports = { authMiddleware, protect, isSuperAdmin, requireAuth };
+module.exports = { authMiddleware, protect, isSuperAdmin, requireAuth,requireUser };
 

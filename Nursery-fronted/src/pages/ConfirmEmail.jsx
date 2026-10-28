@@ -10,28 +10,30 @@ export default function ConfirmEmail() {
     const navigate = useNavigate();
     // const { refresh } = useAuth();
     const [state, setState] = useState({ status: "checking", message: "" }); // checking | success | error
-    const ran = useRef(false); // React StrictMode runs effects twice in development
+    const ran = useRef(false);
 
     useEffect(() => {
         if (ran.current) return;
         ran.current = true;
 
         const token_hash = params.get("token_hash");
+        console.log(token_hash)
         const type = params.get("type");
-        if (!token_hash || !type) {
+        console.log(type);
+        if (!token_hash) {
             return setState({ status: "error", message: "This confirmation link is invalid." });
         }
 
         (async () => {
             try {
-                const res = await fetch(`${API_URL}/auth/confirm`, {
+                const res = await fetch(`${API_URL}/confirm`, {
                     method: "POST",
                     credentials: "include", // lets the browser store the session cookies
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ token_hash, type }),
                 });
                 const data = await res.json().catch(() => ({}));
-
+                console.log(data)
                 if (res.ok) {
                     // await refresh(); // AuthContext now knows the user is logged in
                     setState({ status: "success", message: "Email confirmed! Taking you to your account…" });

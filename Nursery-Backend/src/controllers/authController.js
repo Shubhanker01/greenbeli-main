@@ -5,6 +5,9 @@ const User = require("../models/User");
 const { createClient } = require("../config/supabase.js");
 const { normalizePhone } = require("../utils/normalizePhone.js");
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
+const CONFIRM_TYPES = new Set(["email", "recovery", "magiclink", "email_change"]);
+
+const publicUser = (u) => ({ id: u._id, name: u.name, email: u.email });
 
 
 const generateToken = (userId) => {
@@ -112,12 +115,14 @@ const confirmEmail = async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     const { token_hash, type } = req.body ?? {};
+    console.log(token_hash);
     if (typeof token_hash !== "string" || token_hash.length < 10 || token_hash.length > 256 || !CONFIRM_TYPES.has(type)) {
       return res.status(400).json({ code: "INVALID_TOKEN", message: "This confirmation link is invalid." });
     }
 
     const supabase = createClient(req, res);
     const { data, error } = await supabase.auth.verifyOtp({ token_hash, type }); // checks token + expiry, sets cookies
+    console.log(data)
     if (error || !data?.user) {
       // Expired, already used, or wrong: Supabase doesn't distinguish them reliably, so one message for all
       return res.status(400).json({
@@ -135,40 +140,44 @@ const confirmEmail = async (req, res) => {
 };
 
 const login = async (req, res) => {
+  res.set("Cache-Control", "no-store");
   try {
-    const { email, password } = req.body;
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
     }
-
-    const user = await User.findOne({ email });
-    if (!user) {
+    if (!EMAIL_RE.test(email) || password.length > 72) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    const supabase = createClient(req, res);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password }); // sets the session cookies
+    console.log(data)
+    if (error) {
+      if (error.status === 429) {
+        return res.status(429).json({ message: "Too many attempts. Please try again shortly." });
+      }
+      if (error.code === "email_not_confirmed") {
+        return res.status(401).json({ code: "EMAIL_NOT_CONFIRMED", message: "Please confirm your email first." });
+      }
+      if (error.status >= 500) {
+        return res.status(502).json({ message: "Login service unavailable. Please try again." });
+      }
+      return res.status(401).json({ message: "Invalid credentials" }); // wrong password or unknown email
     }
 
-    const token = generateToken(user._id);
+    const user = await syncShopper(data.user); // find, link or create the MongoDB user
 
-    res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
-      .json({
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-        },
-        token,
-      });
+    res.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      // no token in the body: the session lives in the httpOnly cookies
+    });
   } catch (error) {
     console.error("Login error:", error.message);
     res.status(500).json({ message: "Server error" });
