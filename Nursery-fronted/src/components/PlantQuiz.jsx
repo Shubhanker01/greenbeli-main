@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Sparkles, Sun, Droplets, Heart, ArrowRight, RotateCcw } from "lucide-react";
 import PlantCard from "./PlantCard";
-import { FALLBACK_PRODUCTS } from "../utils/api";
+import { getProducts } from "../utils/api";
 
 /* Shared look for every answer option */
 const OPTION =
@@ -21,22 +21,31 @@ export default function PlantQuiz() {
   });
 
   const [matches, setMatches] = useState([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
+  const [matchError, setMatchError] = useState("");
 
-  const handleSelect = (key, value) => {
+  const handleSelect = async (key, value) => {
     const newAnswers = { ...answers, [key]: value };
     setAnswers(newAnswers);
 
     if (step < 3) {
       setStep(step + 1);
     } else {
-      // Calculate match
-      const filtered = FALLBACK_PRODUCTS.filter((p) => {
-        let score = true;
-        if (newAnswers.pet && p.petFriendly === false) score = false;
-        return score;
-      });
-      setMatches(filtered.slice(0, 3));
       setStep(4);
+      setLoadingMatches(true);
+      setMatchError("");
+      try {
+        const products = await getProducts();
+        const filtered = products.filter((product) => (
+          !newAnswers.pet || product.petFriendly !== false
+        ));
+        setMatches(filtered.slice(0, 3));
+      } catch (error) {
+        setMatchError(error.message || "Unable to find plant recommendations. Please try again.");
+        setMatches([]);
+      } finally {
+        setLoadingMatches(false);
+      }
     }
   };
 
@@ -44,6 +53,7 @@ export default function PlantQuiz() {
     setStep(1);
     setAnswers({ light: "", water: "", pet: null });
     setMatches([]);
+    setMatchError("");
   };
 
   return (
@@ -188,15 +198,27 @@ export default function PlantQuiz() {
           {/* Results Step */}
           {step === 4 && (
             <div className="space-y-6 sm:space-y-8 animate-fade-in">
-              <div className="inline-flex items-center gap-2 text-emerald-800 font-bold text-lg sm:text-2xl">
-                <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-amber-500" /> Your Recommended Botanical Matches!
-              </div>
+              {loadingMatches ? (
+                <p role="status" className="text-slate-600">Finding recommendations...</p>
+              ) : matchError ? (
+                <p role="alert" className="text-rose-700">{matchError}</p>
+              ) : (
+                <>
+                  <div className="inline-flex items-center gap-2 text-emerald-800 font-bold text-lg sm:text-2xl">
+                    <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-amber-500" /> Your Recommended Botanical Matches!
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-8 text-left">
-                {matches.map((product) => (
-                  <PlantCard key={product._id} product={product} />
-                ))}
-              </div>
+                  {matches.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-8 text-left">
+                      {matches.map((product) => (
+                        <PlantCard key={product._id} product={product} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-600">No matching plants are available right now.</p>
+                  )}
+                </>
+              )}
 
               <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                 <button

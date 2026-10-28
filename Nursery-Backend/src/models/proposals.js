@@ -1,37 +1,37 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
-
+const PROPOSAL_STATUSES = ["Pending", "Proposal Sent", "Approved", "Rejected"];
 
 const proposalSchema = new mongoose.Schema(
-    {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        date: { type: Date, default: Date.now },
-        clientName: { type: String, required: true },
-        contactNumber: { type: String, required: true },
-        emailId: { type: String, required: true },
-        address: { type: String, required: true },
-        shipToAddress: { type: String, required: true },
-        description: { type: String, required: false },
-        items: [
-            {
-                product: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: 'Product'
-                },
-                description: String,
-                quantity: Number,
-                rate: Number
-            }
-        ],
-
-        hsnCode: { type: String, required: false },
-        gst: { type: Boolean, required: true },
-        termsAndConditions: { type: String, required: true },
-        note: { type: String, required: true },
-    }, { timestamps: true }
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, trim: true, lowercase: true },
+    phone: { type: String, required: true, trim: true },
+    projectType: {
+      type: String,
+      required: true,
+      enum: ["Residential Balcony", "Villa Garden", "Corporate Office"],
+    },
+    estimatedBudget: {
+      type: String,
+      required: true,
+      enum: [
+        "Under ₹10,000",
+        "₹10,000 - ₹25,000",
+        "₹25,000 - ₹50,000",
+        "₹50,000+",
+      ],
+    },
+    spaceSize: { type: String, trim: true, default: "" },
+    requirements: { type: String, required: true, trim: true },
+    status: {
+      type: String,
+      enum: PROPOSAL_STATUSES,
+      default: "Pending",
+    },
+  },
+  { timestamps: true }
 );
 
-const Proposal = mongoose.model('Proposal', proposalSchema);
-
-
-module.exports = Proposal;
+module.exports = mongoose.model("Proposal", proposalSchema);
+module.exports.PROPOSAL_STATUSES = PROPOSAL_STATUSES;

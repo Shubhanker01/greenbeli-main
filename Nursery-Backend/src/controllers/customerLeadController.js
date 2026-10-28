@@ -43,9 +43,20 @@ const getUserOrdersForAdmin = asyncHandler(async (req, res) => {
   res.json({ user, totals, items: orders });
 });
 
-const listLeadsForAdmin = asyncHandler(async (_req, res) => {
-  const leads = await Lead.find({}).sort({ createdAt: -1 });
-  res.json(leads);
+const listLeadsForAdmin = asyncHandler(async (req, res) => {
+  const page = Math.max(1, parseInt(String(req.query.page || "1"), 10) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || "10"), 10) || 10));
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    Lead.find({})
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Lead.countDocuments({}),
+  ]);
+
+  res.json({ items, page, limit, total });
 });
 
 const createLead = asyncHandler(async (req, res) => {

@@ -15,18 +15,23 @@ import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import Profile from "./pages/Profile";
 import Contact from "./pages/Contact";
+import About from "./pages/About";
+import OurStory from "./pages/OurStory";
+import OurJournal from "./pages/OurJournal";
+import OurGrowers from "./pages/OurGrowers";
 import Gallery from "./pages/Gallery";
 import Proposals from "./pages/Proposals";
 import Testimonials from "./pages/Testimonials";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ConfirmEmail from "./pages/ConfirmEmail";
 
 export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
-        <div className="min-h-screen flex flex-col justify-between selection:bg-emerald-200 selection:text-emerald-950">
+        <div className="min-h-screen flex flex-col justify-between bg-cream selection:bg-emerald-200 selection:text-emerald-950">
           <Navbar />
           <main className="flex-1">
             <Routes>
@@ -39,11 +44,16 @@ export default function App() {
               <Route path="/orders" element={<Orders />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/our-story" element={<OurStory />} />
+              <Route path="/journal" element={<OurJournal />} />
+              <Route path="/our-growers" element={<OurGrowers />} />
               <Route path="/gallery" element={<Gallery />} />
               <Route path="/proposals" element={<Proposals />} />
               <Route path="/testimonials" element={<Testimonials />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/confirm-email" element={<ConfirmEmail />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               {/* Fallback route */}
               <Route path="*" element={<Products />} />

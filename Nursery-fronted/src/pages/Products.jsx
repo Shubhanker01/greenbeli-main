@@ -12,6 +12,7 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -26,13 +27,21 @@ export default function Products() {
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const [catsData, prodsData] = await Promise.all([
-        getCategories(),
-        getProducts(),
-      ]);
-      setCategories(catsData);
-      setProducts(prodsData);
-      setLoading(false);
+      setLoadError("");
+      try {
+        const [catsData, prodsData] = await Promise.all([
+          getCategories(),
+          getProducts(),
+        ]);
+        setCategories(catsData);
+        setProducts(prodsData);
+      } catch (error) {
+        setLoadError(error.message || "Unable to load the catalog. Please try again.");
+        setCategories([]);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
     }
     loadData();
   }, []);
@@ -262,10 +271,14 @@ export default function Products() {
 
           {/* Product Grid (2 columns on mobile) */}
           {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-8 sm:gap-y-12 lg:gap-x-10">
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <div key={n} className="bg-slate-100 rounded-2xl sm:rounded-3xl h-64 sm:h-80 animate-pulse" />
               ))}
+            </div>
+          ) : loadError ? (
+            <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 rounded-3xl p-8 text-center text-sm">
+              {loadError}
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-emerald-100 space-y-4">
@@ -287,12 +300,12 @@ export default function Products() {
             <div
               className={
                 viewMode === "grid"
-                  ? "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6"
+                  ? "grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-8 sm:gap-y-12 lg:gap-x-10"
                   : "space-y-4"
               }
             >
               {filteredProducts.map((product) => (
-                <PlantCard key={product._id} product={product} />
+                <PlantCard key={product._id} product={product} variant="minimal" />
               ))}
             </div>
           )}

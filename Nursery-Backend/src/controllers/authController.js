@@ -1,6 +1,11 @@
+const { crypto } = require("node:crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { createClient } = require("../config/supabase.js");
+const { normalizePhone } = require("../utils/normalizePhone.js");
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
+
 
 const generateToken = (userId) => {
   const secret = process.env.JWT_SECRET;
@@ -13,48 +18,118 @@ const generateToken = (userId) => {
   return jwt.sign({ id: String(userId), type: "user" }, secret, { expiresIn });
 };
 
+
+async function syncShopper(supaUser) {
+  const email = supaUser.email?.toLowerCase();
+  const verified = !!supaUser.email_confirmed_at;   // true once the email link was clicked / Google email
+  const meta = supaUser.user_metadata ?? {};         // name, phone, avatar saved at sign-up
+
+  // 1) Returning user: Mongo record already linked to this Supabase id
+  let user = await User.findOne({ supabaseId: supaUser.id });
+  if (user) return user;
+
+  // 2) Old customer with the same VERIFIED email: link the existing record
+  if (email && verified) {
+    user = await User.findOne({ email });
+    if (user) {
+      user.supabaseId = supaUser.id;
+      if (!user.avatar && meta.avatar_url) user.avatar = meta.avatar_url;
+      if (!user.phone && meta.phone) user.phone = meta.phone;
+      await user.save();
+      return user;
+    }
+  }
+
+  // 3) Brand-new shopper: create the Mongo record
+  return User.create({
+    supabaseId: supaUser.id,
+    email,
+    name: meta.full_name || meta.name || email?.split("@")[0] || "Shopper",
+    phone: meta.phone,
+    avatar: meta.avatar_url,
+  });
+}
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const name = typeof req.body?.name === "string" ? req.body.name.trim().slice(0, 80) : "";
+    const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
+    const phone = normalizePhone(req.body?.phone);
+    const supabase = createClient(req, res);
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Name, email and password are required" });
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({ message: "Name, email password and phone are required" });
+    }
+    if (!EMAIL_RE.test(email)) {
+      return res.status(400).json({ message: "Enter a valid email address" });
+    }
+    if (password.length < 8 || password.length > 72) {
+      return res.status(400).json({ message: "Password must be 8-72 characters" });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ message: "User already exists with this email" });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
-      name,
+    const { data, error } = await supabase.auth.signUp({
       email,
-      password: hashedPassword,
+      password,
+      options: {
+        data: { full_name: name, phone }, // stored in Supabase, copied to Mongo on first login
+        emailRedirectTo: `${process.env.FRONTEND_URL}/login?confirmed=1`,
+      },
     });
 
-    const token = generateToken(user._id);
+    if (error) {
+      if (error.status === 429) {
+        return res.status(429).json({ message: "Too many attempts. Please try again shortly." });
+      }
+      if (error.code === "weak_password") {
+        return res.status(400).json({ message: "That password is too weak. Try a longer one." });
+      }
+      // Existing email: answer exactly like a success so nobody can probe which emails are registered
+      if (error.code === "user_already_exists") {
+        return res.status(201).json({ message: "Check your email to confirm your account." });
+      }
+      console.error("Register error:", error.status, error.message);
+      return res.status(500).json({ message: "Could not create your account" });
+    }
 
-    res
-      .status(201)
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      })
-      .json({
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-        },
-        token,
+    // Email confirmation OFF: Supabase already logged the user in (cookies are set)
+    if (data.session && data.user) {
+      const user = await syncShopper(data.user);
+      return res.status(201).json({
+        user: { id: user._id, name: user.name, email: user.email },
       });
+    }
+
+    // Email confirmation ON (recommended): no session until they click the link
+    return res.status(201).json({ message: "Check your email to confirm your account." });
   } catch (error) {
     console.error("Register error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+const confirmEmail = async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const { token_hash, type } = req.body ?? {};
+    if (typeof token_hash !== "string" || token_hash.length < 10 || token_hash.length > 256 || !CONFIRM_TYPES.has(type)) {
+      return res.status(400).json({ code: "INVALID_TOKEN", message: "This confirmation link is invalid." });
+    }
+
+    const supabase = createClient(req, res);
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash, type }); // checks token + expiry, sets cookies
+    if (error || !data?.user) {
+      // Expired, already used, or wrong: Supabase doesn't distinguish them reliably, so one message for all
+      return res.status(400).json({
+        code: "TOKEN_EXPIRED_OR_INVALID",
+        message: "This link is invalid or has expired. Please register again.",
+      });
+    }
+
+    const user = await syncShopper(data.user); // email is verified now, so create the Mongo record
+    return res.status(200).json({ success: true, user: publicUser(user) });
+  } catch (err) {
+    console.error("confirmEmail:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -205,6 +280,7 @@ module.exports = {
   getAllusers,
   logout,
   updateProfile,
+  confirmEmail
 };
 
 

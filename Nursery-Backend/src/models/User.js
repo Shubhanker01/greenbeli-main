@@ -4,13 +4,7 @@ const userSchema = new mongoose.Schema(
   {
     userId: {
       type: String
-
-
     },
-    firstName: {
-      type: String,
-    },
-    // Backward compatibility for older code that used `name`
     name: {
       type: String,
     },
@@ -20,11 +14,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true
     },
-    password: {
-      type: String,
-      // required: true,
-      minlength: 8
-    },
+    supabaseId: { type: String, unique: true, sparse: true, index: true },
 
     profilePicture: {
       type: Array,

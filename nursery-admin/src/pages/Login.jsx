@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sprout, Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
-import { useAdminAuth } from "../context/AdminAuthContext";
+import { Sprout, Mail, Lock, ArrowRight, ShieldCheck, LoaderCircle } from "lucide-react";
 import api from "../lib/axios";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { loginAdmin } = useAdminAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,18 +15,29 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await api.post("/admin/login", { email, password });
-    setLoading(false);
-    const data = res.data;
-    if (data.success) {
-      if (data.nextStep === 'mfa-setup') {
-        navigate("/mfa-enrollment")
+    try {
+      const res = await api.post("/admin/login", { email, password });
+      const data = res.data;
+
+      if (data.success) {
+        if (data.nextStep === "mfa-setup") {
+          navigate("/mfa-enrollment");
+        } else if (data.nextStep === "mfa") {
+          navigate("/mfa-verify");
+        } else {
+          setError("Login succeeded, but the next authentication step is unavailable. Please try again.");
+        }
+      } else {
+        setError(data.message || "Invalid admin credentials.");
       }
-      else if (data.nextStep === 'mfa') {
-        navigate("/mfa-verify")
-      }
-    } else {
-      setError(data.message || "Invalid admin credentials.");
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          requestError.message ||
+          "Unable to sign in. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,7 +53,7 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-xl font-medium">
+          <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-xl font-medium">
             {error}
           </div>
         )}
@@ -85,7 +94,17 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg transition flex items-center justify-center gap-2"
           >
-            {loading ? "Authenticating Admin..." : "Access Dashboard"} <ArrowRight className="w-4 h-4" />
+            {loading ? (
+              <>
+                <LoaderCircle className="w-4 h-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                Access Dashboard
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </form>
 

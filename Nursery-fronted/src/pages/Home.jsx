@@ -45,7 +45,7 @@ export default function Home() {
 
   return (
 
-    <div className="space-y-16 sm:space-y-24 pb-20 sm:pb-24 overflow-hidden bg-[#f6f3ea]">
+    <div className="space-y-16 sm:space-y-24 pb-20 sm:pb-24 overflow-hidden bg-cream">
 
       {/* 1. HERO SECTION - Ultra Luxury Botanical Showcase */}
       <Hero />

@@ -42,13 +42,21 @@ export async function getDashboardStatsApi() {
 }
 
 // Products Management
-export async function getAdminProductsApi() {
+export async function getAdminProductsApi(page, limit = 10, search = "") {
   try {
+    if (page !== undefined) {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      if (search) params.set("search", search);
+      return await adminFetch(`/products/paginated?${params}`);
+    }
     const data = await adminFetch("/products");
     if (Array.isArray(data.items)) return data.items;
     return [];
   } catch {
-    return [];
+    return page !== undefined ? { items: [], total: 0, totalPages: 1 } : [];
   }
 }
 
@@ -151,38 +159,44 @@ export async function createCustomerApi(userData) {
 }
 
 // Leads Management
-export async function getAdminLeadsApi() {
-  try {
-    return await adminFetch("/admin/leads");
-  } catch {
-    return [
-      { _id: "lead-1", name: "Suresh Raina", email: "suresh@example.com", phone: "+91 91234 56789", subject: "Bulk Corporate Plants", message: "Need 50 indoor office planters for new Gurgaon campus.", status: "New", createdAt: "2026-07-25" },
-    ];
-  }
+export async function getAdminLeadsApi(page = 1, limit = 10) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return await adminFetch(`/leads?${params}`);
 }
 
 export async function updateLeadStatusApi(id, status) {
-  return await adminFetch(`/admin/leads/${id}`, {
+  return await adminFetch(`/leads/${id}`, {
     method: "PUT",
     body: JSON.stringify({ status }),
   });
 }
 
+export async function deleteLeadStatusApi(id) {
+  return await adminFetch(`/leads/${id}`, {
+    method: "DELETE",
+  });
+}
+
 // Proposals Management
-export async function getAdminProposalsApi() {
-  try {
-    return await adminFetch("/proposals");
-  } catch {
-    return [
-      { _id: "prop-1", name: "Neha Gupta", email: "neha@example.com", phone: "+91 99887 76655", projectType: "Villa Garden", estimatedBudget: "₹25,000 - ₹50,000", requirements: "Complete lawn turfing and palm tree installation", status: "Pending", createdAt: "2026-07-24" },
-    ];
+export async function getAdminProposalsApi(page = 1, limit = 10) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  const data = await adminFetch(`/proposals?${params}`);
+  if (!Array.isArray(data?.proposals)) {
+    throw new Error("The proposals response is invalid.");
   }
+  return data;
 }
 
 export async function updateProposalApi(id, status) {
   return await adminFetch(`/proposals/${id}`, {
     method: "PUT",
     body: JSON.stringify({ status }),
+  });
+}
+
+export async function deleteProposalApi(id) {
+  return await adminFetch(`/proposals/${id}`, {
+    method: "DELETE",
   });
 }
 

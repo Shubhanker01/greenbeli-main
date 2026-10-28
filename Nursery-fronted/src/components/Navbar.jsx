@@ -101,7 +101,7 @@ export default function Navbar() {
           </div>
           <div className="hidden sm:flex items-center gap-6 text-xs text-emerald-300">
             <a href="tel:+919876543210" className="flex items-center gap-1.5 hover:text-white transition">
-              <PhoneCall className="w-3.5 h-3.5" /> +91 98765 43210
+              <PhoneCall className="w-3.5 h-3.5" /> +91 9950711475
             </a>
             <span>Free Express Delivery Over ₹499</span>
           </div>

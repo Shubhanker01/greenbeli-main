@@ -11,24 +11,32 @@ export default function ProductCategoryPage() {
   const [products, setProducts] = useState([]);
   const [categoryInfo, setCategoryInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     async function loadCategoryData() {
       setLoading(true);
-      const [cats, allProds] = await Promise.all([getCategories(), getProducts()]);
-      
-      const foundCat = cats.find(
-        (c) => c.slug === targetCategory || c.name.toLowerCase() === targetCategory?.toLowerCase()
-      );
-      setCategoryInfo(foundCat || { name: targetCategory?.replace("-", " ") });
+      setLoadError("");
+      try {
+        const [cats, allProds] = await Promise.all([getCategories(), getProducts()]);
 
-      const filtered = allProds.filter(
-        (p) =>
-          p.categorySlug === targetCategory ||
-          p.category?.toLowerCase() === targetCategory?.replace("-", " ").toLowerCase()
-      );
-      setProducts(filtered.length > 0 ? filtered : allProds.slice(0, 4));
-      setLoading(false);
+        const foundCat = cats.find(
+          (c) => c.slug === targetCategory || c.name.toLowerCase() === targetCategory?.toLowerCase()
+        );
+        setCategoryInfo(foundCat || { name: targetCategory?.replace("-", " ") });
+
+        const filtered = allProds.filter(
+          (p) =>
+            p.categorySlug === targetCategory ||
+            p.category?.toLowerCase() === targetCategory?.replace("-", " ").toLowerCase()
+        );
+        setProducts(filtered.length > 0 ? filtered : allProds.slice(0, 4));
+      } catch (error) {
+        setLoadError(error.message || "Unable to load this category. Please try again.");
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
     }
     loadCategoryData();
   }, [targetCategory]);
@@ -61,6 +69,10 @@ export default function ProductCategoryPage() {
           {[1, 2, 3, 4].map((n) => (
             <div key={n} className="bg-slate-100 rounded-3xl h-80 animate-pulse" />
           ))}
+        </div>
+      ) : loadError ? (
+        <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 rounded-3xl p-8 text-center text-sm">
+          {loadError}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

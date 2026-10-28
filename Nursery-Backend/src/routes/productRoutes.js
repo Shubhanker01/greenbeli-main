@@ -13,6 +13,7 @@ const {
   addOrUpdateMyReview,
   updateReview,
 } = require("../controllers/productController");
+const { getPaginatedProducts } = require("../controllers/productPaginationController");
 const productUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_IMAGE_BYTES, files: 8 },
@@ -22,6 +23,7 @@ const productUpload = multer({
 
 
 // public read (slug before :id so "slug" is not parsed as id)
+router.get("/paginated", getPaginatedProducts);
 router.get("/", listProducts);
 router.get("/slug/:slug", getProductBySlug);
 router.get("/:id", getProduct);

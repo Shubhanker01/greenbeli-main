@@ -22,6 +22,8 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import MfaEnrollmentPage from "./pages/MfaEnrollment";
 import MfaVerifyPage from "./pages/MfaVerify";
+import ResetMfa from "./pages/ResetMfa";
+import ResetPassword from "./pages/ResetPassword";
 
 function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -49,6 +51,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/mfa-enrollment" element={<MfaEnrollmentPage />} />
         <Route path="/mfa-verify" element={<MfaVerifyPage />} />
+        <Route path="/reset-mfa" element={<ResetMfa />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/admin/reset-password" element={<ResetPassword />} />
 
         {/* Protected: must be a logged-in admin with a verified MFA session */}
         <Route element={<RequireAdmin />}>

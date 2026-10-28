@@ -3,13 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Sprout,
   Send,
-  ShieldCheck,
-  Truck,
-  Leaf,
-  Headphones,
-  MapPin,
-  Phone,
-  Mail,
   Heart,
   Globe,
   Share2,
@@ -20,7 +13,6 @@ import { RevealGroup } from "./Reveal";
 // Color Palette Tokens based on Greenbeli Figma Design
 const GREEN = "#1f4a34";
 const GREEN_DARK = "#163828";
-const CREAM = "#f6f3ea";
 const SAGE = "#e8ede1";
 
 export default function Footer() {
@@ -70,7 +62,7 @@ export default function Footer() {
               {subscribed ? (
                 <div
                   className="p-4 rounded-xl text-sm font-semibold text-emerald-900 border border-emerald-300"
-                  style={{ backgroundColor: CREAM }}
+                  style={{ backgroundColor: "var(--color-cream)" }}
                 >
                   🎉 Thanks for joining! Check your inbox for your 10% discount.
                 </div>

@@ -7,7 +7,6 @@ import { X } from 'lucide-react';
 // Color Palette Tokens based on Figma Design
 const GREEN = "#1f4a34";
 const GREEN_DARK = "#163828";
-const CREAM = "#f6f3ea";
 const SAGE = "#e8ede1";
 
 export default function TestimonialsSection({ onShare }) {
@@ -54,10 +53,7 @@ export default function TestimonialsSection({ onShare }) {
     return (
         <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12 sm:py-16">
             {/* Main Section Outer Box - Matches Cream/Sage Warm Aesthetic */}
-            <div
-                className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-12 lg:p-16 border border-[#e2decb] shadow-sm"
-                style={{ backgroundColor: CREAM }}
-            >
+            <div className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-12 lg:p-16 border border-[#e2decb] shadow-sm bg-cream">
                 <div className="relative z-10">
                     {/* Header Block matching Figma typography */}
                     <Reveal className="relative text-center max-w-2xl mx-auto mb-10 sm:mb-14 space-y-3">

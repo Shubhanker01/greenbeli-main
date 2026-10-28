@@ -26,10 +26,20 @@ export default function MfaVerifyPage() {
             setSuccess(true);
 
             // Optional: Call a callback to redirect the user to the dashboard
-            navigate("/dashboard")
+            navigate("/")
 
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            if (err.response?.data?.redirectTo === '/mfa/reset') {
+                navigate('/reset-mfa', { replace: true });
+                return;
+            }
+            setCode('');
+            setError(
+                err.response?.data?.message ||
+                err.response?.data?.error ||
+                err.message ||
+                'Unable to verify the code. Please try again.'
+            );
         } finally {
             setLoading(false);
         }
@@ -51,16 +61,19 @@ export default function MfaVerifyPage() {
                 Enter the 6-digit code from your authenticator app to complete your login.
             </p>
 
-            {error && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
+            {error && <div role="alert" className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
             <form onSubmit={handleVerify} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Authenticator Code</label>
                     <input
                         type="text"
-                        maxLength="6"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        pattern="[0-9]{6}"
+                        maxLength={6}
                         value={code}
-                        onChange={(e) => setCode(e.target.value)}
+                        onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                         placeholder="123456"
                         required
                         autoFocus

@@ -1,262 +1,290 @@
-import {
-  HiOutlineArrowRight,
-  HiOutlineShieldCheck,
-  HiOutlineSparkles,
-  HiOutlineTruck,
-} from 'react-icons/hi2'
-import { GiPlantSeed, GiFlowerPot, GiCactus, GiTreeBranch, GiGardeningShears } from 'react-icons/gi'
+import React from "react";
+import { Link } from "react-router-dom";
+import { 
+  ArrowUpRight, 
+  Sprout, 
+  ShieldCheck, 
+  Truck, 
+  Award, 
+  HelpCircle, 
+  HeartHandshake, 
+  Sun, 
+  Leaf, 
+  CheckCircle2,
+  Users
+} from "lucide-react";
+import { Reveal, RevealGroup } from "../components/Reveal";
 
-const offerItems = [
-  {
-    id: 1,
-    title: 'Indoor Plants',
-    description: 'Air-purifying and low-maintenance greens for home or office.',
-    icon: GiPlantSeed,
-  },
-  {
-    id: 2,
-    title: 'Flower Plants',
-    description: 'Color-rich flowering varieties curated for balconies or gifting.',
-    icon: GiFlowerPot,
-  },
-  {
-    id: 3,
-    title: 'Succulents',
-    description: 'Compact, modern texturing plants that demand minimal upkeep.',
-    icon: GiCactus,
-  },
-  {
-    id: 4,
-    title: 'Outdoor Plants',
-    description: 'Hardy foliage, shrubs, and trees for open terraces and gardens.',
-    icon: GiTreeBranch,
-  },
-  {
-    id: 5,
-    title: 'Pots & Tools',
-    description: 'Planters, soil mixes, and essential tools for healthy growth.',
-    icon: GiGardeningShears,
-  },
-]
+const GREEN = "#1f4a34";
+const GREEN_DARK = "#163828";
+const SAGE = "#cfe3c8";
 
-const chooseUsItems = [
+const VALUES = [
   {
-    id: 1,
-    title: 'Healthy Roots',
-    description: 'Nurtured with special care for root health and long-term vitality.',
-    icon: HiOutlineSparkles,
+    icon: Sprout,
+    title: "Nurtured Organically",
+    desc: "Every plant is cultivated in healthy organic coco peat and vermicompost mixes with zero harmful chemical growth retardants.",
   },
   {
-    id: 2,
-    title: 'Safe Transit',
-    description: 'Secure protective packaging to prevent damage during shipping.',
-    icon: HiOutlineTruck,
+    icon: Truck,
+    title: "Zero-Stress Eco Packaging",
+    desc: "Custom-engineered breathable transit boxes protect roots, foliage, and moist soil throughout transit to your doorstep.",
   },
   {
-    id: 3,
-    title: '100% Organic',
-    description: 'Raised using organic feeds, soil mixes, and natural processes.',
-    icon: GiPlantSeed,
+    icon: ShieldCheck,
+    title: "7-Day Transit Guarantee",
+    desc: "If any plant arrives in damaged condition or fails to thrive, we replace it immediately with complete peace of mind.",
   },
   {
-    id: 4,
-    title: 'Lifetime Support',
-    description: 'Free plant-care guidance and ongoing support whenever needed.',
-    icon: HiOutlineShieldCheck,
+    icon: HelpCircle,
+    title: "Free Botanist Guidance",
+    desc: "Our horticulture team provides continuous plant-parent guidance, seasonal feeding schedules, and diagnostic care.",
   },
-]
+];
 
-function About() {
+const MILESTONES = [
+  { value: "50,000+", label: "Plants Delivered Safely" },
+  { value: "12,500+", label: "Happy Growing Homes" },
+  { value: "100%", label: "Organic Soil Medium" },
+  { value: "4.9 / 5", label: "Botanist Care Rating" },
+];
+
+export default function About() {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      {/* Elegant Hero Banner */}
-      <section className="relative overflow-hidden bg-emerald-950 px-4 py-16 text-white sm:px-6 md:py-24">
-        {/* Soft atmospheric gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0a2f1d] via-[#103f29] to-[#1e583e] opacity-95" />
-        <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="absolute -right-24 -bottom-24 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
+    <div className="bg-cream min-h-screen text-slate-800 pb-20 sm:pb-28 overflow-hidden">
+      
+      {/* ----------------- 1. HERO SECTION ----------------- */}
+      <section className="relative overflow-hidden bg-cream">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.75),transparent_60%)]"
+        />
 
-        <div className="relative mx-auto max-w-[1200px]">
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div className="animate-fade-in-up">
-              <span className="text-xs font-bold uppercase tracking-[0.25em] text-emerald-400">
-                About Our Nursery
-              </span>
-              <h1 className="serif-title mt-4 text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
-                Nurturing Nature for Your Space
-              </h1>
-              <p className="mt-6 text-base leading-relaxed text-emerald-100/90 sm:text-lg">
-                We believe in bringing healthy, organic plants directly from our greenhouse to your home. Our passion is helping you cultivate a green, fresh, and calming environment.
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-12 sm:py-16 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          
+          {/* Left Text */}
+          <RevealGroup stagger={0.12} delay={0.05} className="space-y-6 sm:space-y-7">
+            <Reveal>
+              <p style={{ color: GREEN }} className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em]">
+                Our Botanical Story & Mission
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-900/40 px-4 py-2 text-xs font-semibold tracking-wider text-emerald-200">
-                  100+ Varieties
-                </span>
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-900/40 px-4 py-2 text-xs font-semibold tracking-wider text-emerald-200">
-                  Secure Delivery
-                </span>
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-900/40 px-4 py-2 text-xs font-semibold tracking-wider text-emerald-200">
-                  Organic Soil
-                </span>
-              </div>
-            </div>
-            <div className="relative mx-auto w-full max-w-[500px] lg:max-w-none animate-fade-in-up delay-100">
-              <div className="aspect-[4/3] overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
-                <img
-                  src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=1200&auto=format&fit=crop"
-                  alt="Greenhouse Plants"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            </Reveal>
 
-      {/* Our Story & Stats */}
-      <section className="bg-white px-4 py-16 sm:px-6 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div className="order-2 lg:order-1 animate-fade-in-up">
-              <div className="aspect-[4/3] overflow-hidden rounded-2xl shadow-lg">
-                <img
-                  src="https://images.unsplash.com/photo-1459156212016-c812468e2115?q=80&w=1200&auto=format&fit=crop"
-                  alt="Plants detail"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
-            <div className="order-1 lg:order-2 animate-fade-in-up delay-100">
-              <div className="mb-4 flex items-center gap-2">
-                <span className="h-[2px] w-8 bg-emerald-600" />
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-                  Our Story
-                </span>
-              </div>
-              <h2 className="serif-title text-3xl font-bold text-emerald-950 sm:text-4xl">
-                From Greenhouse to Your Doorstep
-              </h2>
-              <p className="mt-6 leading-relaxed text-slate-600">
-                What began as a small passion project in 2018 has grown into a trusted nursery serving plant lovers nationwide. Every plant we grow receives individual attention, custom organic feeding, and precise care schedules.
-              </p>
-              <p className="mt-4 leading-relaxed text-slate-600">
-                We design our packaging and shipping solutions so that your greens arrive fresh, active, and fully ready to fit into their new homes.
-              </p>
-
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <div className="rounded-xl border border-emerald-100 bg-[#fcfdfe] p-5 shadow-sm">
-                  <span className="text-3xl font-bold text-emerald-800">4,000+</span>
-                  <p className="mt-2 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Healthy Plants
-                  </p>
-                </div>
-                <div className="rounded-xl border border-emerald-100 bg-[#fcfdfe] p-5 shadow-sm">
-                  <span className="text-3xl font-bold text-emerald-800">12,000+</span>
-                  <p className="mt-2 text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Happy Buyers
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* What We Offer Grid */}
-      <section className="bg-slate-100/50 px-4 py-16 sm:px-6 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="mb-12 animate-fade-in-up text-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-              Our Catalog
-            </span>
-            <h2 className="serif-title mt-2 text-3xl font-bold text-emerald-950 sm:text-4xl">
-              Fresh Varieties & Nursery Essentials
-            </h2>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {offerItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <article
-                  key={item.id}
-                  className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md duration-300"
-                >
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                    {item.description}
-                  </p>
-                </article>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose Us */}
-      <section className="bg-white px-4 py-16 sm:px-6 md:py-24">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="mb-12 animate-fade-in-up text-center">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-              Why Us
-            </span>
-            <h2 className="serif-title mt-2 text-3xl font-bold text-emerald-950 sm:text-4xl">
-              Quality Plant Care You Can Trust
-            </h2>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {chooseUsItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <article
-                  key={item.id}
-                  className="rounded-2xl border border-emerald-50 bg-[#fafdf8] p-6 shadow-sm hover:shadow-md transition duration-300"
-                >
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-500">
-                    {item.description}
-                  </p>
-                </article>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Clean CTA Section */}
-      <section className="px-4 pb-16 sm:px-6 md:pb-24 bg-white">
-        <div className="mx-auto max-w-[1000px] overflow-hidden rounded-2xl bg-emerald-950 px-6 py-12 text-white shadow-xl sm:px-12 md:py-16 relative">
-          <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-emerald-500/10 blur-[80px]" />
-          <div className="absolute left-0 bottom-0 h-64 w-64 rounded-full bg-emerald-400/5 blur-[80px]" />
-
-          <div className="relative text-center">
-            <h2 className="serif-title text-3xl font-bold sm:text-4xl">
-              Ready to Green Up Your Space?
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm text-emerald-100/85 sm:text-base leading-relaxed">
-              Explore our selection of indoor and outdoor plants, tools, and accessories. Start creating your own green corner today.
-            </p>
-            <div className="mt-8">
-              <a
-                href="/#products"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-emerald-950 transition hover:bg-emerald-50 active:scale-98"
+            <Reveal>
+              <h1
+                style={{ color: GREEN }}
+                className="serif-font text-5xl sm:text-6xl lg:text-[5rem] font-medium leading-[1.04] tracking-tight"
               >
-                Shop Plants
-                <HiOutlineArrowRight className="h-4 w-4" />
-              </a>
+                Rooted in care. Grown for life.
+              </h1>
+            </Reveal>
+
+            <Reveal>
+              <p className="text-base sm:text-lg lg:text-xl text-stone-600 leading-relaxed max-w-xl">
+                GreenBeli began with a simple belief: bringing nature indoors shouldn't be stressful or fragile. 
+                We nurture strong, healthy plants from sapling to doorstep so your space can thrive effortlessly.
+              </p>
+            </Reveal>
+
+            <Reveal className="flex flex-wrap items-center gap-4 pt-2">
+              <Link
+                to="/products"
+                style={{ backgroundColor: GREEN }}
+                className="group inline-flex items-center gap-2 text-white text-base font-semibold px-7 py-4 rounded-md shadow-lg shadow-emerald-950/15 transition hover:brightness-90 touch-active"
+              >
+                Explore Plant Collection
+                <ArrowUpRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+
+              <Link
+                to="/contact"
+                style={{ color: GREEN }}
+                className="text-base font-semibold underline underline-offset-4 decoration-2 decoration-transparent hover:decoration-current transition px-2 py-4"
+              >
+                Connect with our Botanists
+              </Link>
+            </Reveal>
+          </RevealGroup>
+
+          {/* Right Image (Clean, No Card - Home Page Aesthetic) */}
+          <Reveal delay={0.15} className="relative">
+            <div className="relative aspect-[4/3] sm:aspect-[4/3] overflow-hidden rounded-tl-[4rem] sm:rounded-tl-[7rem] rounded-br-[4rem] sm:rounded-br-[7rem] rounded-tr-md rounded-bl-md bg-emerald-100/60 shadow-2xl shadow-emerald-950/10">
+              <img
+                src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=1200&auto=format&fit=crop"
+                alt="GreenBeli Greenhouse Nursery"
+                className="w-full h-full object-cover transition-transform duration-[1200ms] hover:scale-105"
+              />
+            </div>
+            {/* Ambient Accent badge */}
+            <div className="absolute -bottom-6 -left-4 sm:bottom-6 sm:-left-8 bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-md shadow-xl border border-stone-200/80 max-w-[220px]">
+              <div className="flex items-center gap-2 mb-1">
+                <Leaf style={{ color: GREEN }} className="w-4 h-4" />
+                <span className="text-xs font-bold text-[#1f4a34] uppercase tracking-wider">Horticulture Certified</span>
+              </div>
+              <p className="text-xs text-stone-600">Nurtured with zero synthetic growth inhibitors.</p>
+            </div>
+          </Reveal>
+
+        </div>
+      </section>
+
+      {/* ----------------- 2. STATS & HERITAGE ----------------- */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-10 sm:py-16">
+        <div className="border-y border-stone-200/80 py-10 sm:py-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            {MILESTONES.map((item, idx) => (
+              <div key={idx} className="space-y-1">
+                <p style={{ color: GREEN }} className="serif-font text-3xl sm:text-5xl font-bold tracking-tight">
+                  {item.value}
+                </p>
+                <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-stone-500">
+                  {item.label}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ----------------- 3. BOTANICAL JOURNEY / OUR STORY ----------------- */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-12 sm:py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          
+          <Reveal effect="slide" className="order-2 lg:order-1 relative">
+            <div className="aspect-[4/3] overflow-hidden rounded-tr-[4rem] sm:rounded-tr-[6rem] rounded-bl-[4rem] sm:rounded-bl-[6rem] rounded-tl-md rounded-br-md bg-emerald-100/60 shadow-xl">
+              <img
+                src="https://images.unsplash.com/photo-1459156212016-c812468e2115?q=80&w=1200&auto=format&fit=crop"
+                alt="Plant foliage up close"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </Reveal>
+
+          <RevealGroup stagger={0.1} className="order-1 lg:order-2 space-y-6">
+            <Reveal>
+              <p style={{ color: GREEN }} className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em]">
+                How We Grow
+              </p>
+            </Reveal>
+
+            <Reveal>
+              <h2
+                style={{ color: GREEN }}
+                className="serif-font text-3xl sm:text-5xl font-bold leading-[1.08] tracking-tight"
+              >
+                From greenhouse roots to living sanctuaries.
+              </h2>
+            </Reveal>
+
+            <Reveal>
+              <p className="text-base sm:text-lg text-stone-600 leading-relaxed">
+                Most commercial nurseries accelerate growth with synthetic chemicals to look lush on retail shelves, only to droop after you bring them home. At GreenBeli, we take the patient approach.
+              </p>
+            </Reveal>
+
+            <Reveal>
+              <p className="text-base sm:text-lg text-stone-600 leading-relaxed">
+                Every plant is acclimated to natural indoor light levels, pre-potted in breathable porous mixes, and inspected individually before dispatch. When you open a GreenBeli box, you receive a plant primed to thrive for years.
+              </p>
+            </Reveal>
+
+            <Reveal className="pt-2">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 style={{ color: GREEN }} className="w-5 h-5 shrink-0 mt-0.5" />
+                  <span className="text-sm font-semibold text-stone-700">Root-health inspected before dispatch</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 style={{ color: GREEN }} className="w-5 h-5 shrink-0 mt-0.5" />
+                  <span className="text-sm font-semibold text-stone-700">Custom soil formulations by plant type</span>
+                </div>
+              </div>
+            </Reveal>
+          </RevealGroup>
+
+        </div>
+      </section>
+
+      {/* ----------------- 4. BOTANICAL EXCELLENCE (Deep Green Signature Band) ----------------- */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-10 sm:py-16">
+        <div
+          style={{ backgroundColor: GREEN, color: "var(--color-cream)" }}
+          className="relative overflow-hidden rounded-tl-[4.5rem] sm:rounded-tl-[8rem] lg:rounded-tl-[10rem] rounded-tr-xl rounded-b-xl shadow-2xl shadow-emerald-950/25 p-6 sm:p-10 lg:p-16"
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.10),transparent_60%)]"
+          />
+
+          <div className="relative z-10 space-y-12">
+            <Reveal className="max-w-3xl space-y-4">
+              <p style={{ color: SAGE }} className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em]">
+                The GreenBeli Standard
+              </p>
+              <h2 className="serif-font text-3xl sm:text-5xl font-bold leading-[1.08] tracking-tight">
+                Our Four Botanical Guarantees
+              </h2>
+              <p className="text-base sm:text-lg leading-relaxed text-stone-200/90">
+                Designed to make plant parenthood joyful, transparent, and resilient for novices and enthusiasts alike.
+              </p>
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {VALUES.map((val, idx) => {
+                const Icon = val.icon;
+                return (
+                  <div key={idx} className="space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-[#cfe3c8]">
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <h3 className="serif-font text-xl font-bold text-white">
+                      {val.title}
+                    </h3>
+                    <p className="text-sm text-stone-300 leading-relaxed">
+                      {val.desc}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
-    </div>
-  )
-}
 
-export default About
+      {/* ----------------- 5. INVITATION / CTA ----------------- */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-8 pt-12 sm:pt-20 text-center space-y-6">
+        <p style={{ color: GREEN }} className="text-xs sm:text-sm font-bold uppercase tracking-[0.18em]">
+          Begin Your Green Journey
+        </p>
+        <h2
+          style={{ color: GREEN }}
+          className="serif-font text-4xl sm:text-6xl font-medium leading-[1.06] tracking-tight"
+        >
+          Make room for a little more life.
+        </h2>
+        <p className="text-base sm:text-lg text-stone-600 max-w-xl mx-auto leading-relaxed">
+          Browse our hand-selected botanical collections, or connect with our plant advisors for personalized recommendations tailored to your space.
+        </p>
+
+        <div className="pt-4 flex flex-wrap justify-center gap-4">
+          <Link
+            to="/products"
+            style={{ backgroundColor: GREEN }}
+            className="inline-flex items-center gap-2 text-white font-semibold px-8 py-4 rounded-md shadow-lg shadow-emerald-950/15 transition hover:brightness-90 touch-active text-base"
+          >
+            Shop All Plants
+            <ArrowUpRight className="w-5 h-5" />
+          </Link>
+          <Link
+            to="/proposals"
+            style={{ color: GREEN, borderColor: GREEN }}
+            className="inline-flex items-center gap-2 bg-white/80 border text-base font-semibold px-8 py-4 rounded-md shadow-sm transition hover:bg-white touch-active"
+          >
+            Custom Landscape Inquiry
+          </Link>
+        </div>
+      </section>
+
+    </div>
+  );
+}

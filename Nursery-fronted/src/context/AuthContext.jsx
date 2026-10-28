@@ -49,15 +49,26 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await registerUser({ name, email, password, phone });
+
+      // Case 1: Email confirmation required — backend returns { message } with no user/session
+      if (res.message && !res.user) {
+        setLoading(false);
+        return { success: true, requiresConfirmation: true, message: res.message };
+      }
+
+      // Case 2: Email confirmation OFF — backend returns { user } and optionally a token
       if (res.token) {
         setToken(res.token);
         localStorage.setItem("nursery_user_token", res.token);
       }
-      const userInfo = res.user || { name, email, phone };
-      setUser(userInfo);
-      localStorage.setItem("nursery_user_info", JSON.stringify(userInfo));
+      if (res.user) {
+        const userInfo = res.user;
+        setUser(userInfo);
+        localStorage.setItem("nursery_user_info", JSON.stringify(userInfo));
+      }
+
       setLoading(false);
-      return { success: true, user: userInfo };
+      return { success: true, requiresConfirmation: false, user: res.user };
     } catch (err) {
       setLoading(false);
       return { success: false, message: err.message || "Registration failed" };

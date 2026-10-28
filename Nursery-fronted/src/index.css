@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+@theme {
+  --color-cream: #f6f3ea;
+}
+
 @layer base {
   :root {
     --color-emerald-primary: #059669;
@@ -8,7 +12,6 @@
     --color-leaf-light: #f0fdf4;
     --color-mint-accent: #10b981;
     --color-gold-accent: #f59e0b;
-    --color-cream-bg: #fafdfb;
   }
 
   * {
@@ -26,7 +29,7 @@
   body {
     font-family: "Plus Jakarta Sans", "Inter", "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
     color: #0f172a;
-    background-color: var(--color-cream-bg);
+    background-color: var(--color-cream);
     letter-spacing: -0.01em;
     padding-bottom: env(safe-area-inset-bottom, 0);
   }

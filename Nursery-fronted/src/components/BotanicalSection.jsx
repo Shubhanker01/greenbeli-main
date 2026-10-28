@@ -3,7 +3,6 @@ import { Reveal, RevealGroup } from "./Reveal" // adjust path to where you saved
 
 /* Palette from the Figma design (same values as the hero) */
 const GREEN = "#1f4a34"
-const CREAM = "#f6f3ea"
 const SAGE = "#cfe3c8"
 
 const FEATURES = [
@@ -37,7 +36,7 @@ function BotanicalSection() {
                     The large top-left curve echoes the hero photo.
                     (Plain div on purpose: each block inside reveals on its own scroll position.) */}
                 <div
-                    style={{ backgroundColor: GREEN, color: CREAM }}
+                    style={{ backgroundColor: GREEN, color: "var(--color-cream)" }}
                     className="relative overflow-hidden rounded-tl-[4.5rem] sm:rounded-tl-[8rem] lg:rounded-tl-[10rem] rounded-tr-xl rounded-b-xl shadow-2xl shadow-emerald-950/25 p-6 sm:p-10 lg:p-14"
                 >
                     {/* Soft light wash so the green isn't flat */}
@@ -56,7 +55,7 @@ function BotanicalSection() {
                                 Why Thousands Trust{" "}
                                 <span style={{ color: SAGE }} className="italic">Our Nursery</span>
                             </h2>
-                            <p className="text-base sm:text-lg leading-relaxed max-w-2xl" style={{ color: `${CREAM}c7` }}>
+                            <p className="text-base sm:text-lg leading-relaxed max-w-2xl" style={{ color: "color-mix(in srgb, var(--color-cream) 78%, transparent)" }}>
                                 We take extreme care in growing, packaging, and supporting your plant parent journey.
                             </p>
                         </Reveal>
@@ -70,8 +69,8 @@ function BotanicalSection() {
                                 >
                                     <div className="flex items-center gap-4 mb-5">
                                         <span
-                                            style={{ borderColor: `${CREAM}4d` }}
-                                            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border flex items-center justify-center transition-colors duration-300 group-hover:bg-[#f6f3ea] group-hover:text-[#1f4a34]"
+                                            style={{ borderColor: "color-mix(in srgb, var(--color-cream) 30%, transparent)" }}
+                                            className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border flex items-center justify-center transition-colors duration-300 group-hover:bg-cream group-hover:text-[#1f4a34]"
                                         >
                                             <Icon className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={1.6} />
                                         </span>
@@ -83,7 +82,7 @@ function BotanicalSection() {
                                     <h3 className="serif-font text-xl sm:text-2xl font-bold leading-snug mb-2">
                                         {title}
                                     </h3>
-                                    <p className="text-base leading-relaxed" style={{ color: `${CREAM}bf` }}>
+                                    <p className="text-base leading-relaxed" style={{ color: "color-mix(in srgb, var(--color-cream) 75%, transparent)" }}>
                                         {desc}
                                     </p>
                                 </Reveal>

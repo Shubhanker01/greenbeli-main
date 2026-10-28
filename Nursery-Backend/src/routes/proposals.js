@@ -1,4 +1,5 @@
 const router = require('express').Router();
+const { requireAuth } = require("../middleware/authMiddleware");
 
 const {
     createProposal,
@@ -9,12 +10,12 @@ const {
 } = require('../controllers/proposals');
 
 
-router.post('/createProposals', createProposal);
-router.get('/', getAllProposals);
-router.get('/getproposalById/:id', getProposalById);
-router.get('/:id', getProposalById);
-router.put('/:id', updateProposal);
-router.delete('/:id', deleteProposal);
+router.post('/', createProposal);
+router.get('/', requireAuth, getAllProposals);
+router.get('/getproposalById/:id', requireAuth, getProposalById);
+router.get('/:id', requireAuth, getProposalById);
+router.put('/:id', requireAuth, updateProposal);
+router.delete('/:id', requireAuth, deleteProposal);
 
 
 module.exports = router;

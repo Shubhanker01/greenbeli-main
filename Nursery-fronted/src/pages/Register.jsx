@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Sprout, Mail, Lock, User, Phone, ArrowRight, Sparkles } from "lucide-react";
+import { Sprout, Mail, Lock, User, Phone, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
@@ -13,20 +13,75 @@ export default function Register() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Basic phone validation matching backend normalizePhone expectations
+    const rawPhone = phone.trim();
+    if (!rawPhone) {
+      setError("Mobile phone number is required.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
     setLoading(true);
-    const res = await register(name, email, password, phone);
+    const res = await register(name, email, password, rawPhone);
     setLoading(false);
 
     if (res.success) {
-      navigate("/");
+      if (res.requiresConfirmation) {
+        // Email confirmation mode: show success message, don't navigate
+        setConfirmationSent(true);
+        setConfirmationEmail(email);
+      } else {
+        // Immediate session: go to home
+        navigate("/");
+      }
     } else {
-      setError(res.message || "Registration failed. Try another email.");
+      setError(res.message || "Registration failed. Please try again.");
     }
   };
+
+  // Email confirmation success screen
+  if (confirmationSent) {
+    return (
+      <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
+        <div className="bg-white rounded-3xl border border-emerald-100 shadow-2xl p-10 max-w-md w-full text-center space-y-5">
+          <CheckCircle2 className="w-14 h-14 text-emerald-600 mx-auto" />
+          <h2 className="serif-font text-2xl font-bold text-slate-900">Check Your Inbox!</h2>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            We've sent a confirmation link to{" "}
+            <span className="font-bold text-emerald-800">{confirmationEmail}</span>.{" "}
+            Click the link to verify your account and start shopping.
+          </p>
+          <p className="text-xs text-slate-400">
+            Didn't receive it? Check your spam folder or{" "}
+            <button
+              type="button"
+              onClick={() => setConfirmationSent(false)}
+              className="font-bold text-emerald-700 hover:underline"
+            >
+              try again
+            </button>
+            .
+          </p>
+          <Link
+            to="/login"
+            className="inline-block w-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-3 rounded-2xl text-sm transition"
+          >
+            Go to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
@@ -41,7 +96,7 @@ export default function Register() {
             </Link>
 
             <h2 className="serif-font text-2xl font-bold pt-6">
-              Join Our Botanical Club & Get 15% OFF
+              Join Our Botanical Club &amp; Get 15% OFF
             </h2>
             <p className="text-xs text-emerald-200/80 leading-relaxed">
               Create a free account to unlock member discounts, fast express checkout, and botanical care guides.
@@ -61,12 +116,12 @@ export default function Register() {
           </div>
 
           {error && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-xl font-medium">
+            <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-xl font-medium">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
               <div className="relative">
@@ -76,6 +131,7 @@ export default function Register() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Priya Sharma"
+                  autoComplete="name"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
                 />
                 <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -91,6 +147,7 @@ export default function Register() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="priya@example.com"
+                  autoComplete="email"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
                 />
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -98,17 +155,22 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Phone</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Mobile Phone <span className="text-rose-500">*</span>
+              </label>
               <div className="relative">
                 <input
                   type="tel"
+                  required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+91 98765 43210"
+                  autoComplete="tel"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
                 />
                 <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               </div>
+              <p className="text-[10px] text-slate-400 mt-1">Format: 9876543210 or +91 98765 43210</p>
             </div>
 
             <div>
@@ -117,9 +179,11 @@ export default function Register() {
                 <input
                   type="password"
                   required
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="At least 8 characters"
+                  autoComplete="new-password"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
                 />
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -129,7 +193,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg transition flex items-center justify-center gap-2"
+              className="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold py-3.5 rounded-2xl text-xs shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {loading ? "Creating Account..." : "Create Account"} <ArrowRight className="w-4 h-4" />
             </button>

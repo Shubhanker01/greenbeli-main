@@ -1,9 +1,13 @@
+require('dotenv').config();
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/admin");
 const { createClient } = require('../config/supabase');
 const AuthSecurityTracker = require('../models/authSecurityTracker');
+const { sendPasswordResetEmail } = require("../utils/email");
+const { supabaseAdmin } = require("../config/admin");
+
 
 // GET /api/admin/session  (NOT behind requireAdmin)
 const adminSession = async (req, res) => {
@@ -116,10 +120,32 @@ exports.loginAdmin = async (req, res) => {
       )
       if (tracker.passwordFailures >= 5) {
         tracker.isPasswordLocked = true
-        await tracker.save()
-        return res.status(403).json({
+        const resetToken = crypto.randomBytes(32).toString('hex')
+        tracker.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        tracker.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
+        await tracker.save();
+        const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+        const targetUser = usersData?.users?.find(u => u.email?.toLowerCase() === email);
+        if (targetUser) {
+          const randomizedPassword = crypto.randomBytes(24).toString('base64') + '!Z9';
+          await supabaseAdmin.auth.admin.updateUserById(targetUser.id, {
+            password: randomizedPassword,
+          });
+        }
+
+        const siteUrl = process.env.SITE_URL;
+        const resetUrl = `${siteUrl}/admin/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+        console.warn(`[SECURITY ALERT] 5 failed password attempts for ${email}. Account locked. Reset URL: ${resetUrl}`);
+
+        // Dispatch emergency recovery link via Resend
+        sendPasswordResetEmail({
+          toEmail: email,
+          resetUrl,
+        }).catch((e) => console.error('Failed to send lockout reset email:', e));
+
+        return res.status(423).json({
           success: false,
-          message: "Too many failed attempts your account has been locked"
+          message: "Account locked due to failed attempts. Emergency link has been generated!!!"
         })
       }
       return res.status(401).json({
@@ -301,33 +327,65 @@ exports.forgotPassword = async (req, res) => {
 };
 exports.resetPassword = async (req, res) => {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
-
-    // 🔐 Hash token
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
-
-    const admin = await Admin.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpire: { $gt: Date.now() },
-    });
-
-    if (!admin) {
+    const { email, token, password } = req.body || {};
+    const emailNorm = email ? String(email).toLowerCase().trim() : "";
+    if (
+      !emailNorm ||
+      typeof token !== "string" ||
+      !token ||
+      typeof password !== "string" ||
+      password.length < 8
+    ) {
       return res.status(400).json({
-        message: "Invalid or expired token",
+        success: false,
+        message: "Email, reset token and a password of at least 8 characters are required",
       });
     }
 
-    // 🔥 Update password
-    admin.password = await bcrypt.hash(password, 10);
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const tracker = await AuthSecurityTracker.findOne({
+      identifier: emailNorm,
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: new Date() },
+    });
 
-    admin.resetPasswordToken = undefined;
-    admin.resetPasswordExpire = undefined;
+    if (!tracker) {
+      return res.status(400).json({
+        success: false,
+        message: "This password reset link is invalid or has expired. Request a new link.",
+      });
+    }
 
-    await admin.save();
+    let user;
+    for (let page = 1; !user; page += 1) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 100,
+      });
+      if (error) throw error;
+
+      user = data.users.find((candidate) => candidate.email?.toLowerCase() === emailNorm);
+      if (user || data.users.length < 100) break;
+    }
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "This password reset link is invalid or has expired. Request a new link.",
+      });
+    }
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      password,
+    });
+    if (updateError) throw updateError;
+
+    tracker.passwordFailures = 0;
+    tracker.isPasswordLocked = false;
+    tracker.passwordResetToken = null;
+    tracker.passwordResetExpires = null;
+    tracker.updatedAt = new Date();
+    await tracker.save();
 
     res.json({
       success: true,

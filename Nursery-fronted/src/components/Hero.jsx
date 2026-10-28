@@ -6,7 +6,6 @@ import { Reveal, RevealGroup } from "./Reveal"; // adjust path to where you save
 /* Palette taken from the design: warm cream, deep green, soft sage */
 const GREEN = "#1f4a34";
 const GREEN_DARK = "#163828";
-const CREAM = "#f6f3ea";
 const SAGE = "#e8ede1";
 
 const BENEFITS = [
@@ -19,7 +18,7 @@ export default function Hero() {
   return (
     <div>
       {/* ---------------------------- Hero ---------------------------- */}
-      <section style={{ backgroundColor: CREAM }} className="relative overflow-hidden">
+      <section className="relative overflow-hidden bg-cream">
         {/* Soft light wash so the cream isn't flat */}
         <div
           aria-hidden="true"
@@ -97,7 +96,7 @@ export default function Hero() {
             {/* Floating note card (outside the clipped photo so it never zooms) */}
             <Reveal delay={0.8} className="absolute left-3 bottom-3 sm:left-6 sm:bottom-6 max-w-[18rem]">
               <div
-                style={{ backgroundColor: `${CREAM}f2` }}
+                style={{ backgroundColor: "color-mix(in srgb, var(--color-cream) 95%, transparent)" }}
                 className="flex items-center gap-3 sm:gap-4 rounded-lg px-4 py-3 sm:px-5 sm:py-4 shadow-xl backdrop-blur-sm"
               >
                 <span
