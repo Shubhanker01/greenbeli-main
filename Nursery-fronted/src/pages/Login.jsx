@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Sprout, Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Sprout, Mail, Lock, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const confirmedFromQuery = searchParams.get("confirmed") === "1";
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -65,6 +67,13 @@ export default function Login() {
             <h2 className="serif-font text-2xl font-bold text-slate-900">Sign In to Your Account</h2>
             <p className="text-xs text-slate-500 mt-1">Enter your credentials below to access your botanical profile.</p>
           </div>
+
+          {confirmedFromQuery && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-3.5 rounded-xl font-medium flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Email confirmed successfully! You can now sign in.</span>
+            </div>
+          )}
 
           {error && (
             <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs p-3.5 rounded-xl font-medium">

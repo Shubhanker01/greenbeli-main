@@ -70,12 +70,13 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "Password must be 8-72 characters" });
     }
 
+    const frontendUrl = process.env.FRONTEND_URL || process.env.SITE_URL || "http://localhost:5173";
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: name, phone }, // stored in Supabase, copied to Mongo on first login
-        emailRedirectTo: `${process.env.FRONTEND_URL}/login?confirmed=1`,
+        emailRedirectTo: `${frontendUrl}/confirm-email`,
       },
     });
 
@@ -131,8 +132,8 @@ const confirmEmail = async (req, res) => {
       });
     }
 
-    const user = await syncShopper(data.user); // email is verified now, so create the Mongo record
-    return res.status(200).json({ success: true, user: publicUser(user) });
+    // const user = await syncShopper(data.user); // email is verified now, so create the Mongo record
+    return res.status(200).json({ success: true, user: publicUser(data.user) });
   } catch (err) {
     console.error("confirmEmail:", err.message);
     res.status(500).json({ message: "Server error" });
@@ -168,13 +169,13 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" }); // wrong password or unknown email
     }
 
-    const user = await syncShopper(data.user); // find, link or create the MongoDB user
+    // const user = await syncShopper(data.user); // find, link or create the MongoDB user
 
     res.json({
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
       },
       // no token in the body: the session lives in the httpOnly cookies
     });
@@ -183,6 +184,20 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+const userSession = async (req, res) => {
+  const user = req?.user;
+  if (!user) return res.json({ status: "unauthenticated" });
+
+  return res.json({
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    }
+  });
+}
+
 
 const me = async (req, res) => {
   try {
@@ -212,14 +227,34 @@ const getAllusers = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-const logout = (req, res) => {
-  res
-    .clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-    })
-    .json({ message: "Logged out successfully" });
+const logout = async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const supabase = createClient(req, res);
+
+    // "local" = log out this browser only. The default ("global") would also log the
+    // user out of every other device and browser.
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) console.error("Logout:", error.status, error.message); // e.g. session already expired
+  } catch (error) {
+    console.error("Logout error:", error.message);
+  }
+
+  // Belt and braces: remove any leftover Supabase cookies, plus your old JWT cookie
+  const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  };
+  for (const name of Object.keys(req.cookies ?? {})) {
+    if (name === "token" || (name.startsWith("sb-") && name.includes("auth-token"))) {
+      res.clearCookie(name, cookieOptions);
+    }
+  }
+
+  // Always succeed: if the session was already gone, the user is logged out either way
+  res.json({ message: "Logged out successfully" });
 };
 
 const updateProfile = async (req, res) => {
@@ -289,7 +324,8 @@ module.exports = {
   getAllusers,
   logout,
   updateProfile,
-  confirmEmail
+  confirmEmail,
+  userSession
 };
 
 

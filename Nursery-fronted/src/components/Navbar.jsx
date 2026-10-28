@@ -100,7 +100,7 @@ export default function Navbar() {
             <span className="truncate">🌱 20% OFF indoor plants! Code: <b className="text-emerald-300 font-extrabold">GREEN20</b></span>
           </div>
           <div className="hidden sm:flex items-center gap-6 text-xs text-emerald-300">
-            <a href="tel:+919876543210" className="flex items-center gap-1.5 hover:text-white transition">
+            <a href="tel:+919950711475" className="flex items-center gap-1.5 hover:text-white transition">
               <PhoneCall className="w-3.5 h-3.5" /> +91 9950711475
             </a>
             <span>Free Express Delivery Over ₹499</span>
@@ -321,7 +321,12 @@ export default function Navbar() {
                       <span className="w-6 h-6 rounded-full bg-emerald-800 text-white flex items-center justify-center text-xs font-bold uppercase">
                         {user?.name ? user.name[0] : "U"}
                       </span>
-                      <span className="hidden md:inline max-w-[80px] truncate">{user?.name || "Account"}</span>
+                      <span
+                        className="hidden sm:inline max-w-[130px] lg:max-w-[160px] truncate"
+                        title={user?.email || user?.name || "Account"}
+                      >
+                        {user?.email || user?.name || "Account"}
+                      </span>
                       <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
                     </button>
 

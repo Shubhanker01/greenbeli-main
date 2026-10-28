@@ -47,7 +47,6 @@ const requireUser = async (req, res, next) => {
     if (error || !user) return res.status(401).json({ success: false, code: "UNAUTHENTICATED" });
     req.user = user;
     next();
-
   }
   catch (err) {
     res.status(500).json({ success: false, code: "SERVER_ERROR" })

@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, useContext, createContext } from "react"
-// AdminAuthProvider.jsx: ask the server, don't read localStorage
 const AdminAuthContext = createContext(null);
 export const useAdminAuth = () => useContext(AdminAuthContext);
 const API_URL = "http://localhost:5007"

@@ -37,13 +37,16 @@ export async function fetchApi(endpoint, options = {}) {
   const config = {
     headers: getAuthHeaders(),
     ...options,
+    credentials: "include",
   };
 
   try {
     const res = await fetch(url, config);
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || `Request failed with status ${res.status}`);
+      const error = new Error(data.message || `Request failed with status ${res.status}`);
+      error.status = res.status;
+      throw error;
     }
     return data;
   } catch (err) {
@@ -180,6 +183,28 @@ export async function registerUser(userData) {
 
 export async function getCurrentUserProfile() {
   return await fetchApi("/me");
+}
+
+export async function getAuthSession() {
+  try {
+    const data = await fetchApi("/session");
+    if (data.status === "unauthenticated") {
+      return { user: null };
+    }
+    if (!data.user || typeof data.user.email !== "string") {
+      throw new Error("The session response is invalid.");
+    }
+    return { user: data.user };
+  } catch (error) {
+    if (error.status === 401) {
+      return { user: null };
+    }
+    throw error;
+  }
+}
+
+export async function logoutUser() {
+  return await fetchApi("/logout", { method: "POST" });
 }
 
 export async function updateUserProfile(profileData) {

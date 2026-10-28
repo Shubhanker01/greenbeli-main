@@ -1,110 +1,154 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { getCurrentUserProfile, loginUser, registerUser, updateUserProfile } from "../utils/api";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  getAuthSession,
+  loginUser,
+  logoutUser,
+  registerUser,
+  updateUserProfile,
+} from "../utils/api";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("nursery_user_info");
-    return saved ? JSON.parse(saved) : null;
+  const [state, setState] = useState({
+    status: "loading",
+    user: null,
+    error: null,
   });
-  const [token, setToken] = useState(() => localStorage.getItem("nursery_user_token") || null);
-  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    setState((current) => ({ ...current, status: "loading", error: null }));
+    try {
+      const session = await getAuthSession();
+      const nextState = {
+        status: session.user ? "authenticated" : "unauthenticated",
+        user: session.user || null,
+        error: null,
+      };
+      setState(nextState);
+      return { success: true, ...nextState };
+    } catch (error) {
+      const nextState = {
+        status: "error",
+        user: null,
+        error: error.message || "Unable to check your sign-in status.",
+      };
+      setState(nextState);
+      return { success: false, ...nextState, message: nextState.error };
+    }
+  }, []);
 
   useEffect(() => {
-    if (token) {
-      getCurrentUserProfile()
-        .then((userData) => {
-          if (userData && userData._id) {
-            setUser(userData);
-            localStorage.setItem("nursery_user_info", JSON.stringify(userData));
-          }
-        })
-        .catch(() => {
-          // Token expired or invalid
-        });
-    }
-  }, [token]);
+    refresh();
+  }, [refresh]);
 
   const login = async (email, password) => {
-    setLoading(true);
+    setState({ status: "authenticating", user: null, error: null });
     try {
-      const res = await loginUser(email, password);
-      if (res.token) {
-        setToken(res.token);
-        localStorage.setItem("nursery_user_token", res.token);
+      await loginUser(email, password);
+      const session = await getAuthSession();
+      if (!session.user) {
+        setState({
+          status: "unauthenticated",
+          user: null,
+          error: "Unable to verify your sign-in. Please try again.",
+        });
+        return {
+          success: false,
+          message: "Unable to verify your sign-in. Please try again.",
+        };
       }
-      const userInfo = res.user || { email, name: email.split("@")[0] };
-      setUser(userInfo);
-      localStorage.setItem("nursery_user_info", JSON.stringify(userInfo));
-      setLoading(false);
-      return { success: true, user: userInfo };
-    } catch (err) {
-      setLoading(false);
-      return { success: false, message: err.message || "Login failed" };
+
+      setState({ status: "authenticated", user: session.user, error: null });
+      return { success: true, user: session.user };
+    } catch (error) {
+      const message = error.message || "Login failed.";
+      setState({ status: "unauthenticated", user: null, error: message });
+      return { success: false, message };
     }
   };
 
   const register = async (name, email, password, phone) => {
-    setLoading(true);
+    setState({ status: "authenticating", user: null, error: null });
     try {
-      const res = await registerUser({ name, email, password, phone });
-
-      // Case 1: Email confirmation required — backend returns { message } with no user/session
-      if (res.message && !res.user) {
-        setLoading(false);
-        return { success: true, requiresConfirmation: true, message: res.message };
+      const response = await registerUser({ name, email, password, phone });
+      if (!response.user) {
+        setState({ status: "unauthenticated", user: null, error: null });
+        return {
+          success: true,
+          requiresConfirmation: true,
+          message: response.message,
+        };
       }
 
-      // Case 2: Email confirmation OFF — backend returns { user } and optionally a token
-      if (res.token) {
-        setToken(res.token);
-        localStorage.setItem("nursery_user_token", res.token);
-      }
-      if (res.user) {
-        const userInfo = res.user;
-        setUser(userInfo);
-        localStorage.setItem("nursery_user_info", JSON.stringify(userInfo));
+      const session = await getAuthSession();
+      if (!session.user) {
+        setState({
+          status: "unauthenticated",
+          user: null,
+          error: "Unable to verify your new account. Please sign in.",
+        });
+        return {
+          success: false,
+          message: "Unable to verify your new account. Please sign in.",
+        };
       }
 
-      setLoading(false);
-      return { success: true, requiresConfirmation: false, user: res.user };
-    } catch (err) {
-      setLoading(false);
-      return { success: false, message: err.message || "Registration failed" };
+      setState({ status: "authenticated", user: session.user, error: null });
+      return {
+        success: true,
+        requiresConfirmation: false,
+        user: session.user,
+      };
+    } catch (error) {
+      const message = error.message || "Registration failed.";
+      setState({ status: "unauthenticated", user: null, error: message });
+      return { success: false, message };
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("nursery_user_token");
-    localStorage.removeItem("nursery_user_info");
-  };
-
-  const updateProfile = async (data) => {
+  const logout = async () => {
     try {
-      const updated = await updateUserProfile(data);
-      const newUser = { ...user, ...updated };
-      setUser(newUser);
-      localStorage.setItem("nursery_user_info", JSON.stringify(newUser));
+      await logoutUser();
+      setState({ status: "unauthenticated", user: null, error: null });
       return { success: true };
-    } catch (err) {
-      return { success: false, message: err.message };
+    } catch (error) {
+      const message = error.message || "Unable to sign out.";
+      setState((current) => ({ ...current, error: message }));
+      return { success: false, message };
     }
   };
+
+  const updateProfile = async (profileData) => {
+    try {
+      const response = await updateUserProfile(profileData);
+      if (!response.user) {
+        throw new Error("The profile response did not include a user.");
+      }
+      const user = { ...state.user, ...response.user };
+      setState({ status: "authenticated", user, error: null });
+      return { success: true, user };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || "Profile update failed.",
+      };
+    }
+  };
+
+  const isAuthenticated = state.status === "authenticated" && Boolean(state.user);
 
   return (
     <AuthContext.Provider
       value={{
-        user,
-        token,
-        loading,
+        ...state,
+        loading: state.status === "loading" || state.status === "authenticating",
+        isAuthenticated,
         login,
         register,
         logout,
         updateProfile,
-        isAuthenticated: !!user,
+        refresh,
       }}
     >
       {children}
