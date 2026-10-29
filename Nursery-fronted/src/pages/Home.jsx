@@ -24,22 +24,35 @@ export default function Home() {
   const handleTestimonialSubmit = async (e) => {
     e.preventDefault();
     setReviewSubmitting(true);
-    const formData = new FormData();
-    formData.append("name", reviewName);
-    formData.append("role", reviewRole);
-    formData.append("city", reviewCity);
-    formData.append("rating", reviewRating);
-    formData.append("comment", reviewComment);
+    try {
+      const payload = {
+        name: reviewName,
+        role: reviewRole,
+        city: reviewCity,
+        rating: reviewRating,
+        comment: reviewComment,
+      };
 
-    await submitTestimonial(formData);
-    setReviewSubmitting(false);
-    setReviewSuccess(true);
-    setTimeout(() => {
-      setIsTestimonialModalOpen(false);
-      setReviewSuccess(false);
-      setReviewName("");
-      setReviewComment("");
-    }, 2000);
+      const res = await submitTestimonial(payload);
+      if(!res.success){
+        setReviewSuccess(false);
+      }
+      setReviewSubmitting(false);
+      setReviewSuccess(true);
+      setTimeout(() => {
+        setIsTestimonialModalOpen(false);
+        setReviewSuccess(false);
+        setReviewName("");
+        setReviewRole("");
+        setReviewCity("");
+        setReviewRating(5);
+        setReviewComment("");
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to submit testimonial:", err);
+      setReviewSubmitting(false);
+      alert(err.response?.data?.message || "Failed to submit your garden story.");
+    }
   };
 
 

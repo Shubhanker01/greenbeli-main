@@ -8,6 +8,7 @@ export function AdminAuthProvider({ children }) {
   const refresh = useCallback(async () => {
     try {
       const r = await fetch(`${API_URL}/api/admin/session`, { credentials: "include" });
+      console.log(r)
       setState(await r.json());
     } catch {
       setState({ status: "unauthenticated" });

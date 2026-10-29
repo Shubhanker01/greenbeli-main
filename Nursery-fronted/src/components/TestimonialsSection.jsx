@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star, Quote, Plus } from "lucide-react";
+import { Star, Quote, Plus, CheckCircle2 } from "lucide-react";
 import { Reveal, RevealGroup } from "./Reveal";
 import axiosApi from "../lib/axios"; // Adjust path to your axios instance
 import { X } from 'lucide-react';

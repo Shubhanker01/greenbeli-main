@@ -35,16 +35,22 @@ export default function Testimonials() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("role", role);
-    formData.append("city", city);
-    formData.append("rating", rating);
-    formData.append("comment", comment);
+    const payload = {
+      name: name,
+      role: role,
+      city: city,
+      rating: rating,
+      comment: comment,
+    };
 
-    await submitTestimonial(formData);
+    const res = await submitTestimonial(payload);
+    if(!res.success){
+      setSuccess(false);
+    }
+    else{
+      setSuccess(true);
+    }
     setSubmitting(false);
-    setSuccess(true);
     setTimeout(() => {
       setIsModalOpen(false);
       setSuccess(false);
@@ -55,7 +61,7 @@ export default function Testimonials() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 space-y-10">
-      
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <span className="text-sm font-extrabold text-emerald-700 uppercase tracking-widest flex items-center gap-1.5">
@@ -96,7 +102,7 @@ export default function Testimonials() {
               className="bg-white rounded-3xl p-7 sm:p-8 border border-emerald-100 shadow-sm space-y-5 relative overflow-hidden"
             >
               <Quote className="w-16 h-16 text-emerald-50 absolute top-5 right-5 pointer-events-none" />
-              
+
               <div className="flex items-center gap-1 text-amber-400" aria-label={`${Math.min(5, Math.max(1, Number(t.rating) || 5))} out of 5 stars`}>
                 {[...Array(Math.min(5, Math.max(1, Number(t.rating) || 5)))].map((_, i) => (
                   <Star key={i} className="w-5 h-5 fill-amber-400" />

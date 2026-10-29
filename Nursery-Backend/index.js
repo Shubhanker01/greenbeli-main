@@ -18,6 +18,7 @@ const salesRoutes = require("./src/routes/salesRoutes");
 const testimonialRoutes = require("./src/routes/testimonialRoutes");
 const errorHandler = require("./src/middleware/errorMiddleware");
 const mfaRoutes = require("./src/routes/mfaRoutes");
+const customerRoutes = require("./src/routes/customers");
 const app = express();
 const port = process.env.PORT || 5007;
 
@@ -83,6 +84,7 @@ app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/proposals", proposalsRoutes);
 app.use("/api/leads", leadsRoutes);
 app.use("/api/mfa", mfaRoutes);
+app.use("/api/customers", customerRoutes);
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
 });

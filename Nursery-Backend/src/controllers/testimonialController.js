@@ -9,9 +9,9 @@ const listPublicTestimonials = asyncHandler(async (_req, res) => {
 });
 
 const createTestimonial = asyncHandler(async (req, res) => {
-  const { name, email = "", city = "", rating, review, image = "" } = req.body || {};
+  const { name, email = "", city = "", rating, comment, image = "" } = req.body || {};
   const score = Number(rating);
-  if (!name || !review || !Number.isFinite(score) || score < 1 || score > 5) {
+  if (!name || !comment || !Number.isFinite(score) || score < 1 || score > 5) {
     const err = new Error("name, rating (1-5), and review are required");
     err.statusCode = 400;
     throw err;
@@ -22,14 +22,17 @@ const createTestimonial = asyncHandler(async (req, res) => {
     email: String(email || "").trim(),
     city: String(city || "").trim(),
     rating: score,
-    review: String(review).trim(),
+    comment: String(comment).trim(),
     image: String(image || "").trim(),
     source: req.user?.type === "admin" ? "admin" : "user",
     userId: req.user?.type === "user" ? req.user.id : undefined,
     isApproved: req.user?.type === "admin",
   });
 
-  res.status(201).json(item);
+  res.status(201).json({
+    success: true,
+    message: "Your testimonial has been sent."
+  });
 });
 
 const listAdminTestimonials = asyncHandler(async (_req, res) => {

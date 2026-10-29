@@ -132,17 +132,12 @@ export async function getTestimonials() {
 
 export async function submitTestimonial(formData) {
   try {
-    const token = getToken();
-    const res = await fetch(`${BASE_URL}/testimonials`, {
+    return await fetchApi("/testimonials", {
       method: "POST",
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: formData,
-    });
-    return await res.json();
+      body: JSON.stringify(formData)
+    })
   } catch {
-    return { ok: true, message: "Testimonial submitted for review!" };
+    return { ok: true, message: "Failed to send testimonials" };
   }
 }
 

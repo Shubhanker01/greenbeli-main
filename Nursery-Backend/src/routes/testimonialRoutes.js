@@ -13,7 +13,7 @@ const {
 const upload = require("../../multer");
 
 router.get("/", listPublicTestimonials);
-router.post("/", requireAuth, createTestimonial);
+router.post("/", createTestimonial);
 router.get("/admin", requireAuth, listAdminTestimonials);
 router.patch("/admin/:id/approval", requireAuth, setApproval);
 router.delete("/admin/:id", requireAuth, deleteTestimonial);
