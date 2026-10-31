@@ -1,116 +1,146 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Sprout, 
-  FolderTree, 
-  ShoppingBag, 
-  Users, 
-  PhoneCall, 
-  FileText, 
-  Receipt, 
-  MessageSquare, 
-  Settings, 
-  LogOut, 
-  ShieldCheck,
-  ChevronRight
-} from "lucide-react";
+import logo from "../assets/logo.png";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import LogoutModal from "./LogoutModal";
+import { logoutApi } from "../utils/adminApi";
+import {
+  LuLayoutDashboard,
+  LuPackage,
+  LuLayers,
+  LuShoppingBag,
+  LuTrendingUp,
+  LuQuote,
+  LuLogOut,
+  LuSettings,
+  LuX,
+  LuUsers,
+  LuMousePointerClick,
+  LuFileText,
+} from "react-icons/lu";
 
-export default function AdminSidebar({ isOpen, setIsOpen }) {
+// Adjust to your backend route for the logout controller
+
+
+const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { admin, logoutAdmin } = useAdminAuth();
+  const { refresh } = useAdminAuth();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
-  const navItems = [
-    { name: "Dashboard", path: "/", icon: LayoutDashboard },
-    { name: "Products Catalog", path: "/products", icon: Sprout },
-    { name: "Categories", path: "/categories", icon: FolderTree },
-    { name: "Orders & Lifecycle", path: "/orders", icon: ShoppingBag },
-    { name: "Customers", path: "/customers", icon: Users },
-    { name: "Inquiry Leads", path: "/leads", icon: PhoneCall },
-    { name: "Landscape Proposals", path: "/proposals", icon: FileText },
-    { name: "POS Sales & Receipts", path: "/sales", icon: Receipt },
-    { name: "Testimonials", path: "/testimonials", icon: MessageSquare },
-    { name: "System Settings", path: "/settings", icon: Settings },
-  ];
+  const isSuperAdmin = true;
+
+  const menu = useMemo(() => {
+    const base = [
+      { name: "Dashboard", path: "/dashboard", icon: <LuLayoutDashboard />, superOnly: false },
+      { name: "Products", path: "/products", icon: <LuPackage />, superOnly: false },
+      { name: "Categories", path: "/categories", icon: <LuLayers />, superOnly: false },
+      { name: "Customers", path: "/customers", icon: <LuUsers />, superOnly: false },
+      { name: "Leads", path: "/leads", icon: <LuMousePointerClick />, superOnly: false },
+      { name: "Proposals", path: "/proposals", icon: <LuFileText />, superOnly: false },
+      { name: "Sales", path: "/sales", icon: <LuTrendingUp />, superOnly: true },
+      { name: "Testimonials", path: "/testimonials", icon: <LuQuote />, superOnly: false },
+      { name: "Settings", path: "/settings", icon: <LuSettings />, superOnly: true },
+    ];
+    return base.filter((item) => !item.superOnly || isSuperAdmin);
+  }, [isSuperAdmin]);
+
+  // Runs when "Log out" is pressed in the modal. Throwing shows an error inside the modal.
+  const handleLogout = async () => {
+    const res = await logoutApi();
+    setLogoutOpen(false);
+    if (res.success) {
+      navigate("/login", { replace: true });
+    }
+    await refresh();
+    window.innerWidth < 1024 && onClose();
+  };
 
   return (
-    <aside
-      className={`fixed inset-y-0 left-0 z-40 w-64 admin-sidebar-glass text-white flex flex-col justify-between transition-transform duration-300 ${
-        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      }`}
-    >
-      <div>
-        {/* Brand Header */}
-        <div className="p-6 border-b border-emerald-800/40 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-emerald-400 text-emerald-950 flex items-center justify-center font-bold shadow-lg shadow-emerald-500/20">
-              <Sprout className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="serif-font font-bold text-lg text-white leading-tight">GreenBeli</h1>
-              <span className="text-[10px] tracking-widest text-emerald-400 uppercase font-semibold block">
-                Nursery Admin
-              </span>
-            </div>
-          </Link>
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/20 backdrop-blur-sm lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar Container */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-[260px] h-screen bg-white text-slate-600 flex flex-col border-r border-slate-100 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+      >
+        <div className="flex items-center justify-between px-8 py-4 relative overflow-hidden group">
+          <div className="w-full">
+            <img
+              src={logo}
+              alt="Logo"
+              className="w-28 md:w-28 lg:w-26 h-auto object-contain"
+            />
+          </div>
+
+          <button
+            onClick={onClose}
+            className="lg:hidden p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-emerald-600 transition-colors"
+          >
+            <LuX className="text-xl" />
+          </button>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-180px)]">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
+        <div className="px-6 mb-4">
+          <hr className="border-slate-50" />
+        </div>
+
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar">
+          {menu.map((item) => {
+            const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
             return (
               <Link
-                key={item.name}
+                key={item.path}
                 to={item.path}
-                onClick={() => setIsOpen(false)}
-                className={`flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-semibold transition-all duration-200 ${
-                  isActive
-                    ? "bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-lg shadow-emerald-900/40 font-bold"
-                    : "text-emerald-200/70 hover:bg-emerald-900/60 hover:text-white"
-                }`}
+                onClick={() => window.innerWidth < 1024 && onClose()}
+                className={`relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group
+                ${isActive
+                    ? "bg-emerald-50 text-emerald-700 shadow-sm"
+                    : "text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/50"
+                  }`}
               >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-emerald-400"}`} />
-                  <span>{item.name}</span>
-                </div>
-                {isActive && <ChevronRight className="w-3.5 h-3.5 text-emerald-200" />}
+                <span
+                  className={`text-xl z-10 transition-transform duration-300 ${isActive ? "scale-110 text-emerald-600" : "group-hover:scale-110 group-hover:text-emerald-500"
+                    }`}
+                >
+                  {item.icon}
+                </span>
+                <span className={`font-bold tracking-tight z-10 ${isActive ? "text-emerald-800" : ""}`}>
+                  {item.name}
+                </span>
               </Link>
             );
           })}
         </nav>
-      </div>
 
-      {/* Admin Profile Footer */}
-      <div className="p-4 border-t border-emerald-800/40 bg-emerald-950/80">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-extrabold text-xs">
-              {admin?.name ? admin.name[0].toUpperCase() : "A"}
-            </div>
-            <div className="overflow-hidden max-w-[110px]">
-              <p className="text-xs font-bold text-white truncate">{admin?.name || "Admin"}</p>
-              <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold uppercase">
-                <ShieldCheck className="w-3 h-3" /> {admin?.role || "Manager"}
-              </span>
-            </div>
-          </div>
-
+        <div className="p-6 border-t border-slate-50 bg-slate-50/30">
           <button
-            onClick={() => {
-              logoutAdmin();
-              navigate("/login");
-            }}
-            className="p-2 rounded-xl text-rose-400 hover:bg-rose-950/40 hover:text-rose-300 transition"
-            title="Sign Out"
+            type="button"
+            onClick={() => setLogoutOpen(true)}
+            className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-white hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 border border-slate-100 shadow-sm transition-all duration-300 group"
           >
-            <LogOut className="w-4 h-4" />
+            <div className="p-2 rounded-xl bg-slate-50 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+              <LuLogOut className="text-xl group-hover:-translate-x-1 transition-transform" />
+            </div>
+            <span className="font-bold text-xs tracking-widest uppercase">Logout</span>
           </button>
         </div>
       </div>
-    </aside>
+
+      <LogoutModal
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        onConfirm={handleLogout}
+      />
+    </>
   );
-}
+};
+
+export default Sidebar;

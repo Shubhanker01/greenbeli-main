@@ -3,6 +3,8 @@ const router = express.Router();
 const multer = require("multer");
 const { authMiddleware, requireAuth } = require("../middleware/authMiddleware");
 const { MAX_IMAGE_BYTES } = require("../utils/supabaseStorage");
+const { standardLimit } = require("../middleware/rateLimit");
+
 const {
   productadd,
   listProducts,
@@ -12,6 +14,7 @@ const {
   deleteProduct,
   addOrUpdateMyReview,
   updateReview,
+  fetchProductReviews
 } = require("../controllers/productController");
 const { getPaginatedProducts } = require("../controllers/productPaginationController");
 const productUpload = multer({
@@ -27,14 +30,16 @@ router.get("/paginated", getPaginatedProducts);
 router.get("/", listProducts);
 router.get("/slug/:slug", getProductBySlug);
 router.get("/:id", getProduct);
-router.post("/:id/reviews", authMiddleware, addOrUpdateMyReview);
-router.put("/:id/reviews/:reviewId", authMiddleware, updateReview);
+router.post("/:id/reviews", standardLimit, authMiddleware, addOrUpdateMyReview);
+router.put("/:id/reviews/:reviewId", standardLimit, authMiddleware, updateReview);
+router.get("/:id/reviews", fetchProductReviews);
 
 // admin write
-router.post('/add', requireAuth, productUpload.array("images", 8), productadd);
+router.post('/add', standardLimit, requireAuth, productUpload.array("images", 8), productadd);
 router.put("/:id", requireAuth, updateProduct);
 router.delete(
   "/:id",
+  standardLimit,
   requireAuth,
   deleteProduct
 );

@@ -158,3 +158,24 @@
     box-shadow: 0 20px 40px rgba(6, 78, 59, 0.12), 0 0 0 1px rgba(16, 185, 129, 0.25);
   }
 }
+
+@keyframes float-leaf {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.15;
+  }
+  85% {
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(105vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-leaf-float {
+  animation: float-leaf 12s linear infinite;
+}

@@ -2,9 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Leaf } from "lucide-react";
 import PlantCard from "../components/PlantCard";
+import { Reveal, RevealGroup } from "../components/Reveal"; // adjust path if needed
 import { getCategories, getProductsPaginated, resolveImageUrl } from "../utils/api";
 
 const PAGE_SIZE = 100;
+const GREEN = "#1f4a34";
+
+const GRID =
+  "grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4";
 
 function getCategoryTitle(category, slug) {
   return (
@@ -89,8 +94,11 @@ export default function ProductCategoryPage({ category }) {
     };
   }, [targetCategory, category]);
 
-  const categoryTitle = getCategoryTitle(categoryInfo || category, targetCategory);
-  const categoryImage = categoryInfo?.imageUrl || categoryInfo?.coverImage;
+  const info = categoryInfo || category;
+  const categoryTitle = getCategoryTitle(info, targetCategory);
+  // `image` is the field the homepage category cards use, so it is checked as well
+  const categoryImage = info?.imageUrl || info?.coverImage || info?.image;
+  const countLabel = `${products.length} ${products.length === 1 ? "plant" : "plants"}`;
 
   return (
     <div className="min-h-screen overflow-hidden bg-cream pb-20 text-slate-800 sm:pb-28">
@@ -102,83 +110,116 @@ export default function ProductCategoryPage({ category }) {
           <ArrowLeft className="h-4 w-4" /> All plants
         </Link>
 
-        <header className="mb-10 border-b border-stone-300/80 pb-8 sm:mb-14 sm:pb-10">
-          <div className="grid grid-cols-1 items-end gap-8 sm:grid-cols-[1fr_auto]">
-            <div className="max-w-3xl">
-              <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#1f4a34] sm:text-sm">
-                <Leaf className="h-4 w-4" />
-                Botanical collection
-              </p>
-              <h1 className="serif-font text-4xl font-medium leading-tight tracking-tight text-[#1f4a34] sm:text-5xl lg:text-6xl">
-                {categoryTitle}
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-stone-600 sm:text-base">
-                {categoryInfo?.description ||
-                  `Explore our ${categoryTitle.toLowerCase()} collection, selected to bring more life and greenery into your space.`}
-              </p>
-            </div>
-            {categoryImage && (
-              <img
-                src={resolveImageUrl(categoryImage)}
-                alt={`${categoryTitle} collection`}
-                className="hidden h-36 w-52 rounded-tl-[3rem] rounded-br-[3rem] rounded-tr-md rounded-bl-md object-cover shadow-md sm:block lg:h-44 lg:w-64"
-              />
-            )}
-          </div>
-        </header>
-
-        {loading ? (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((item) => (
-              <div key={item} className="animate-pulse">
-                <div className="aspect-[8/9] rounded-md bg-stone-200/60" />
-                <div className="mt-4 h-5 w-3/4 rounded bg-stone-200/60" />
-                <div className="mt-2 h-4 w-1/2 rounded bg-stone-200/60" />
-              </div>
-            ))}
-          </div>
-        ) : loadError ? (
-          <div
-            role="alert"
-            className="border-y border-rose-200 py-8 text-center text-sm text-rose-700"
-          >
-            {loadError}
-          </div>
-        ) : products.length > 0 ? (
-          <>
-            <p className="mb-6 text-sm text-stone-500">
-              {products.length} {products.length === 1 ? "product" : "products"}
+        {/* Heading first: eyebrow, big title, short description */}
+        <Reveal className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-14">
+          <div className="space-y-3 sm:space-y-4">
+            <p
+              style={{ color: GREEN }}
+              className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] sm:text-sm"
+            >
+              <Leaf className="h-4 w-4" />
+              Botanical collection
             </p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-10 lg:grid-cols-4">
-              {products.map((product) => (
-                <PlantCard
-                  key={product._id}
-                  product={product}
-                  variant="minimal"
+            <h1
+              style={{ color: GREEN }}
+              className="serif-font text-4xl font-medium leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl"
+            >
+              {categoryTitle}
+            </h1>
+          </div>
+
+          <p className="max-w-xl text-base leading-relaxed text-stone-600 sm:text-lg">
+            {info?.description ||
+              `Explore our ${categoryTitle.toLowerCase()} collection, selected to bring more life and greenery into your space.`}
+          </p>
+        </Reveal>
+
+        {/* Big banner image (same arched corner as the homepage hero) */}
+        {loading ? (
+          <div className="mt-8 h-64 animate-pulse rounded-tl-[5rem] rounded-tr-md rounded-b-md bg-emerald-100/60 sm:mt-10 sm:h-96 sm:rounded-tl-[9rem] lg:h-[30rem] lg:rounded-tl-[12rem]" />
+        ) : (
+          categoryImage && (
+            <Reveal effect="rise" className="mt-8 sm:mt-10">
+              <div className="group relative h-64 overflow-hidden rounded-tl-[5rem] rounded-tr-md rounded-b-md bg-emerald-100/60 shadow-xl shadow-emerald-950/10 sm:h-96 sm:rounded-tl-[9rem] lg:h-[30rem] lg:rounded-tl-[12rem]">
+                <img
+                  src={resolveImageUrl(categoryImage)}
+                  alt={`${categoryTitle} collection`}
+                  className="h-full w-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                 />
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 to-transparent"
+                />
+                {products.length > 0 && (
+                  <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-[#1f4a34] shadow-md backdrop-blur-sm sm:bottom-6 sm:left-6">
+                    {countLabel} in this collection
+                  </span>
+                )}
+              </div>
+            </Reveal>
+          )
+        )}
+
+        {/* Products */}
+        <div className="mt-12 sm:mt-16">
+          {loading ? (
+            <div className={GRID}>
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="animate-pulse">
+                  <div className="aspect-[8/9] rounded-md bg-stone-200/60" />
+                  <div className="mt-4 h-5 w-3/4 rounded bg-stone-200/60" />
+                  <div className="mt-2 h-4 w-1/2 rounded bg-stone-200/60" />
+                </div>
               ))}
             </div>
-          </>
-        ) : (
-          <div className="border-y border-stone-300/80 py-12 text-center">
-            <p className="serif-font text-2xl font-semibold text-[#1f4a34]">
-              {categoryInfo
-                ? "This collection is growing."
-                : "We couldn't find this collection."}
-            </p>
-            <p className="mt-2 text-sm text-stone-600">
-              {categoryInfo
-                ? "There are no products in this category just yet. Check back soon or browse all plants."
-                : "Browse all plants to discover the full collection."}
-            </p>
-            <Link
-              to="/products"
-              className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#1f4a34] underline underline-offset-4"
+          ) : loadError ? (
+            <div
+              role="alert"
+              className="border-y border-rose-200 py-8 text-center text-sm text-rose-700"
             >
-              Browse all plants <ArrowLeft className="h-4 w-4 rotate-180" />
-            </Link>
-          </div>
-        )}
+              {loadError}
+            </div>
+          ) : products.length > 0 ? (
+            <>
+              <div className="mb-6 flex items-end justify-between gap-4 border-b border-stone-300/80 pb-4 sm:mb-8">
+                <h2
+                  style={{ color: GREEN }}
+                  className="serif-font text-2xl font-semibold sm:text-3xl"
+                >
+                  Shop the collection
+                </h2>
+                <span className="text-sm text-stone-500">{countLabel}</span>
+              </div>
+
+              <RevealGroup stagger={0.07} className={GRID}>
+                {products.map((product) => (
+                  <Reveal key={product._id} effect="card" className="h-full">
+                    <PlantCard product={product} variant="minimal" />
+                  </Reveal>
+                ))}
+              </RevealGroup>
+            </>
+          ) : (
+            <div className="border-y border-stone-300/80 py-12 text-center">
+              <p className="serif-font text-2xl font-semibold text-[#1f4a34]">
+                {categoryInfo
+                  ? "This collection is growing."
+                  : "We couldn't find this collection."}
+              </p>
+              <p className="mt-2 text-sm text-stone-600">
+                {categoryInfo
+                  ? "There are no products in this category just yet. Check back soon or browse all plants."
+                  : "Browse all plants to discover the full collection."}
+              </p>
+              <Link
+                to="/products"
+                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#1f4a34] underline underline-offset-4"
+              >
+                Browse all plants <ArrowLeft className="h-4 w-4 rotate-180" />
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,21 +1,21 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, Star, Eye, Check, Sun, Droplets, Plus } from "lucide-react";
-import { useCart } from "../context/CartContext";
+// import { useCart } from "../context/CartContext";
 
 // variant="minimal": Figma style (no card background, round "+" button on the photo).
 // Anything else (default): the original card, so other pages are unchanged.
 export default function PlantCard({ product, variant = "default" }) {
-  const { addToCart, toggleWishlist, isInWishlist } = useCart();
+  // const { addToCart, toggleWishlist, isInWishlist } = useCart();
   const [isAdded, setIsAdded] = useState(false);
 
-  const isLiked = isInWishlist(product._id);
+  // const isLiked = isInWishlist(product._id);
   const imageUrl = product.images?.[0] || product.image || "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=600&q=80";
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product, 1);
+    // addToCart(product, 1);
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1800);
   };
@@ -23,7 +23,7 @@ export default function PlantCard({ product, variant = "default" }) {
   const handleWishlistToggle = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleWishlist(product);
+    // toggleWishlist(product);
   };
 
   const discountPercent = product.originalPrice && product.originalPrice > product.price
@@ -60,14 +60,14 @@ export default function PlantCard({ product, variant = "default" }) {
           </div>
 
           {/* Wishlist */}
-          <button
+          {/* <button
             onClick={handleWishlistToggle}
             aria-label="Add to wishlist"
             className={`absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full transition z-10 shadow-sm ${isLiked ? "bg-rose-500 text-white" : "bg-white/90 text-slate-600 hover:bg-white hover:text-rose-500"
               }`}
           >
             <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? "fill-white" : ""}`} />
-          </button>
+          </button> */}
 
           {/* Round "+" add-to-cart button, as in the design */}
           <button

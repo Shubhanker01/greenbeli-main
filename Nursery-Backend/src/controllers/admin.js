@@ -7,14 +7,93 @@ const { createClient } = require('../config/supabase');
 const AuthSecurityTracker = require('../models/authSecurityTracker');
 const { sendPasswordResetEmail } = require("../utils/email");
 const { supabaseAdmin } = require("../config/admin");
+const AUTH_COOKIE = /^(sb-[^.]+-auth-token)(?:\.(\d+))?$/; 
+const SUPABASE_COOKIE = /^sb-.+-(auth-token(\.\d+)?|code-verifier)$/;
+ 
+const safeDecode = (value) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+ 
+// Reads req.cookies (cookie-parser) or, without it, the raw Cookie header
+function readCookies(req) {
+  if (req.cookies && typeof req.cookies === "object") return req.cookies;
+  const out = {};
+  for (const part of String(req.headers?.cookie || "").split(";")) {
+    const i = part.indexOf("=");
+    if (i > 0) out[part.slice(0, i).trim()] = part.slice(i + 1).trim();
+  }
+  return out;
+}
+ 
 
+function getAccessToken(req) {
+  const header = req.headers?.authorization || "";
+  if (/^Bearer\s+\S+/i.test(header)) return header.replace(/^Bearer\s+/i, "").trim();
+ 
+  const cookies = readCookies(req);
+  const groups = {};
+  for (const [name, value] of Object.entries(cookies)) {
+    const m = AUTH_COOKIE.exec(name);
+    if (m) (groups[m[1]] ||= []).push({ index: Number(m[2] ?? 0), value });
+  }
+ 
+  for (const parts of Object.values(groups)) {
+    try {
+      let raw = parts
+        .sort((a, b) => a.index - b.index)
+        .map((p) => safeDecode(p.value))
+        .join("");
+      if (raw.startsWith("base64-")) raw = Buffer.from(raw.slice(7), "base64url").toString("utf8");
+      const session = JSON.parse(raw);
+      const token = Array.isArray(session) ? session[0] : session?.access_token;
+      if (typeof token === "string" && token) return token;
+    } catch {
+      /* unreadable cookie: try the next one */
+    }
+  }
+  return null;
+}
+ 
+// Removes every Supabase auth cookie the browser sent
+function clearAuthCookies(req, res) {
+  const options = { path: "/" };
+  if (process.env.COOKIE_DOMAIN) options.domain = process.env.COOKIE_DOMAIN; // must match how the cookies were set
+  for (const name of Object.keys(readCookies(req))) {
+    if (SUPABASE_COOKIE.test(name)) res.clearCookie(name, options);
+  }
+}
+ 
+// POST /api/auth/logout
+// Body (optional): { "everywhere": true } signs the user out of ALL their devices
+exports.logout = async (req, res) => {
+  res.set("Cache-Control", "no-store");
+ 
+  try {
+    const token = getAccessToken(req);
+    if (token) {
+      const scope = req.body?.everywhere === true ? "global" : "local";
+      const { error } = await supabaseAdmin.auth.admin.signOut(token, scope); // ends the session on Supabase
+      if (error) console.error("Logout: Supabase signOut failed:", error.status, error.message); // e.g. already expired
+    }
+  } catch (err) {
+    console.error("Logout error:", err.message);
+  }
+ 
+  // Always clear the browser's cookies and answer OK: the user must end up logged out either way
+  clearAuthCookies(req, res);
+  res.json({ success: true, message: "Logged out successfully" });
+};
+ 
 
 // GET /api/admin/session  (NOT behind requireAdmin)
 const adminSession = async (req, res) => {
   res.set("Cache-Control", "no-store");
   const supabase = createClient(req, res);
   const { data } = await supabase.auth.getUser();
-  console.log(data)
   const user = data?.user;
   if (!user) return res.json({ status: "unauthenticated" });
   console.log(user.app_metadata.role)
@@ -396,5 +475,6 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 exports.adminSession = adminSession;

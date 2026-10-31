@@ -6,12 +6,19 @@ export function AdminAuthProvider({ children }) {
   const [state, setState] = useState({ status: "loading" });
 
   const refresh = useCallback(async () => {
+    setState({ status: "loading" });        // the guard shows "Checking access…" instead of redirecting
     try {
-      const r = await fetch(`${API_URL}/api/admin/session`, { credentials: "include" });
-      console.log(r)
-      setState(await r.json());
+      const r = await fetch(`${API_URL}/api/admin/session`, {
+        credentials: "include",
+        cache: "no-store",                  // never reuse an old answer
+      });
+      const data = await r.json();
+      setState(data);
+      return data;
     } catch {
-      setState({ status: "unauthenticated" });
+      const data = { status: "unauthenticated" };
+      setState(data);
+      return data;
     }
   }, []);
 

@@ -149,7 +149,7 @@ export async function submitLead(leadData) {
       body: JSON.stringify(leadData),
     });
   } catch {
-    return { ok: true, message: "Inquiry received! Our plant expert will contact you shortly." };
+    return { success: false, message: "Some error occured" };
   }
 }
 
@@ -250,4 +250,8 @@ export async function createOrderApi(orderPayload) {
 
 export async function getMyOrdersApi() {
   return await fetchApi("/orders");
+}
+
+export async function getSystemSettings() {
+  return await fetchApi("/settings");
 }

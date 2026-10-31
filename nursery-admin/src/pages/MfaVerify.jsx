@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from "../lib/axios";
 import { useNavigate } from "react-router-dom"
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 export default function MfaVerifyPage() {
     const navigate = useNavigate();
@@ -8,14 +9,13 @@ export default function MfaVerifyPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
-
+    const { refresh } = useAdminAuth();
     const handleVerify = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
         try {
-            // Adjust the endpoint path to match your backend route (e.g., '/mfa/verify' or '/auth/mfa/verify')
             const response = await api.post('/mfa/verify', { code });
             const data = response.data;
 
@@ -23,10 +23,15 @@ export default function MfaVerifyPage() {
                 throw new Error(data.message || 'Invalid verification code');
             }
 
-            setSuccess(true);
+            // Ask the server who we are NOW (the session was just upgraded to MFA level)
+            const session = await refresh();
 
-            // Optional: Call a callback to redirect the user to the dashboard
-            navigate("/")
+            if (session?.status !== 'ok') {
+                throw new Error('Verified, but your session could not be confirmed. Please log in again.');
+            }
+
+            setSuccess(true);
+            setTimeout(() => navigate('/dashboard', { replace: true }), 800);
 
         } catch (err) {
             if (err.response?.data?.redirectTo === '/mfa/reset') {

@@ -1,21 +1,58 @@
-import React, { useState } from "react";
-import { Settings as SettingsIcon, Save, ShieldCheck, UserPlus } from "lucide-react";
-import { useAdminAuth } from "../context/AdminAuthContext";
+import React, { useEffect, useRef, useState } from "react";
+import { Pencil, Store, Phone, Mail, MapPin } from "lucide-react";
+import StoreSettingsModal from "../components/StoreSettingsModal";
+import { getSettingsApi, updateSettingsApi } from "../utils/adminApi";
+
+const DEFAULT_SETTINGS = {
+  storeName: "GreenBeli Botanical Hub",
+  supportPhone: "+91 98765 43210",
+  supportEmail: "support@greenbeli.in",
+  address: "GreenBeli Gardeniya,Khasra No. 74, Rewari Highway Road, near Gyansagar School, Kotkasim, Alampur, Rajasthan 301702",
+};
 
 export default function Settings() {
-  const { admin } = useAdminAuth();
-
-  const [storeName, setStoreName] = useState("GreenBeli Botanical Hub");
-  const [supportPhone, setSupportPhone] = useState("+91 98765 43210");
-  const [supportEmail, setSupportEmail] = useState("support@greenbeli.in");
-  const [freeShippingThreshold, setFreeShippingThreshold] = useState(499);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [modalOpen, setModalOpen] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const timerRef = useRef(null);
+  const [error, setError] = useState(null);
 
-  const handleSaveSettings = (e) => {
-    e.preventDefault();
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const response = await getSettingsApi();
+      if (response.success) {
+        setSettings(response.data);
+      }
+      else {
+        setError(response.message);
+      }
+    }
+    fetchSettings();
+  }, []);
+
+  // Called by the modal with the validated values.
+  const handleSave = async (values) => {
+    const response = await updateSettingsApi(values);
+    if (response.success) {
+      setSettings(values);
+      setError(null);
+    }
+    else {
+      setError(response.message);
+    }
+
     setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2500);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setSavedSuccess(false), 2500);
   };
+
+  const rows = [
+    { icon: Store, label: "Store Name", value: settings.storeName },
+    { icon: Phone, label: "Helpline Phone", value: settings.supportPhone },
+    { icon: Mail, label: "Support Email", value: settings.supportEmail },
+    { icon: MapPin, label: "Store Address", value: settings.address },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -29,80 +66,50 @@ export default function Settings() {
       </div>
 
       {savedSuccess && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-4 rounded-2xl">
-          ✓ System configurations saved successfully!
+        <div role="status" className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm p-4 rounded-2xl">
+          ✓ Store information updated successfully!
         </div>
       )}
 
-      <form onSubmit={handleSaveSettings} className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm space-y-6">
-        <h3 className="serif-font font-bold text-lg text-slate-900 border-b border-slate-100 pb-3">
-          Store Information & Policy Defaults
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Store Name</label>
-            <input
-              type="text"
-              value={storeName}
-              onChange={(e) => setStoreName(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Free Shipping Threshold (₹)</label>
-            <input
-              type="number"
-              value={freeShippingThreshold}
-              onChange={(e) => setFreeShippingThreshold(Number(e.target.value))}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
-            />
-          </div>
+      {error && (
+        <div role="status" className="bg-red-50 border border-red-200 text-red-800 text-sm p-4 rounded-2xl">
+          {error || "Something went wrong please try again."}
         </div>
+      )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Helpline Phone</label>
-            <input
-              type="tel"
-              value={supportPhone}
-              onChange={(e) => setSupportPhone(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Support Email</label>
-            <input
-              type="email"
-              value={supportEmail}
-              onChange={(e) => setSupportEmail(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
-            />
-          </div>
-        </div>
-
-        <div className="pt-2 flex justify-end">
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+        <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <h3 className="serif-font font-bold text-lg text-slate-900">Store Information</h3>
           <button
-            type="submit"
-            className="bg-emerald-800 text-white font-bold text-xs px-6 py-2.5 rounded-xl hover:bg-emerald-900 flex items-center gap-2 shadow-md"
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-emerald-900 transition flex items-center gap-2 shadow-md"
           >
-            <Save className="w-4 h-4" /> Save System Settings
+            <Pencil className="w-4 h-4" /> Edit Information
           </button>
         </div>
-      </form>
 
-      <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm space-y-4">
-        <h3 className="serif-font font-bold text-lg text-slate-900 border-b border-slate-100 pb-3">
-          Logged In Administrator Profile
-        </h3>
-        <div className="text-xs text-slate-700 space-y-1">
-          <p><b>Name:</b> {admin?.name || "Super Admin"}</p>
-          <p><b>Email:</b> {admin?.email || "admin@greenbeli.in"}</p>
-          <p><b>Privilege Role:</b> {admin?.role || "superadmin"}</p>
-        </div>
-      </div>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {rows.map(({ icon: Icon, label, value }) => (
+            <div key={label} className={`flex items-start gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100 ${label === "Store Address" ? "sm:col-span-2" : ""}`}>
+              <div className="w-10 h-10 shrink-0 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <Icon className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <dt className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{label}</dt>
+                <dd className="mt-0.5 text-sm font-semibold text-slate-900 break-words">{value || "N/A"}</dd>
+              </div>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <StoreSettingsModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        initialValues={settings}
+        onSave={handleSave}
+      />
     </div>
   );
 }

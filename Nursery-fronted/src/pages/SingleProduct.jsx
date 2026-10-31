@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { 
   Star, 
-  ShoppingBag, 
   Heart, 
-  Check, 
+  MessageCircle, 
   ShieldCheck, 
   Sun, 
   Droplets, 
@@ -19,7 +18,7 @@ import {
   Share2
 } from "lucide-react";
 import { getProductBySlugOrId, getProducts, fetchApi, resolveImageUrl } from "../utils/api";
-import { useCart } from "../context/CartContext";
+// import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import PlantCard from "../components/PlantCard";
 import { Reveal, RevealGroup } from "../components/Reveal";
@@ -30,8 +29,7 @@ const SAGE = "#cfe3c8";
 
 export default function SingleProduct() {
   const { id, slug } = useParams();
-  const navigate = useNavigate();
-  const { addToCart, toggleWishlist, isInWishlist } = useCart();
+  // const { toggleWishlist, isInWishlist } = useCart();
   const { user } = useAuth();
 
   const productIdOrSlug = slug || id;
@@ -42,7 +40,6 @@ export default function SingleProduct() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [added, setAdded] = useState(false);
 
   // Reviews state
   const [activeTab, setActiveTab] = useState("description");
@@ -126,18 +123,11 @@ export default function SingleProduct() {
     );
   }
 
-  const isLiked = isInWishlist(product._id);
+  // const isLiked = isInWishlist(product._id);
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
-
-  const handleBuyNow = () => {
-    addToCart(product, quantity);
-    navigate("/cart");
-  };
+  // No cart or online payment yet: the product page sends buyers to the contact form instead.
+  // The product name and quantity travel in the URL so the form can be pre-filled.
+  const inquiryUrl = `/contact`;
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
@@ -210,7 +200,7 @@ export default function SingleProduct() {
               </div>
 
               {/* Wishlist round button */}
-              <button
+              {/* <button
                 onClick={() => toggleWishlist(product)}
                 aria-label="Add to wishlist"
                 className={`absolute top-4 right-4 p-3 rounded-full transition z-10 shadow-sm ${
@@ -218,7 +208,7 @@ export default function SingleProduct() {
                 }`}
               >
                 <Heart className={`w-5 h-5 ${isLiked ? "fill-white" : ""}`} />
-              </button>
+              </button> */}
             </div>
 
             {/* Thumbnail selector without card container */}
@@ -350,33 +340,18 @@ export default function SingleProduct() {
                 </div>
               </div>
 
-              {/* Main Desktop Action Buttons */}
-              <div className="hidden lg:grid grid-cols-2 gap-4 pt-2">
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  disabled={added}
+              {/* Main Desktop Action: enquiry (no cart / online payment yet) */}
+              <div className="hidden lg:block pt-2 space-y-3">
+                <Link
+                  to={inquiryUrl}
                   style={{ backgroundColor: GREEN }}
                   className="w-full text-white font-semibold py-4 px-6 rounded-md shadow-lg shadow-emerald-950/15 flex items-center justify-center gap-2.5 transition hover:brightness-90 touch-active text-base"
                 >
-                  {added ? (
-                    <>
-                      <Check className="w-5 h-5" /> Added to Shopping Bag
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-5 h-5" /> Add to Shopping Bag
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleBuyNow}
-                  className="w-full bg-[#163828] hover:bg-black text-white font-semibold py-4 px-6 rounded-md shadow-lg transition touch-active text-base"
-                >
-                  Buy Now Express
-                </button>
+                  <MessageCircle className="w-5 h-5" /> Enquire About This Plant
+                </Link>
+                <p className="text-xs text-stone-500 text-center">
+                  Share your details and our botanists will confirm availability, pricing and delivery.
+                </p>
               </div>
             </div>
 
@@ -553,28 +528,16 @@ export default function SingleProduct() {
       {/* Sticky Mobile Bottom Bar for Easy Ordering (<1024px) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3.5 bg-cream/95 backdrop-blur-md border-t border-stone-200 z-40 shadow-xl flex items-center justify-between gap-3">
         <div>
-          <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Total</span>
+          <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Est. total</span>
           <p className="text-lg font-bold text-[#1f4a34]">₹{product.price * quantity}</p>
         </div>
-        <div className="flex items-center gap-2 flex-1 max-w-[260px]">
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={added}
-            style={{ backgroundColor: GREEN }}
-            className="flex-1 text-white font-semibold py-2.5 rounded-md text-xs flex items-center justify-center gap-1.5 shadow-md touch-active"
-          >
-            {added ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
-            <span>{added ? "Added" : "Add"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            className="flex-1 bg-[#163828] text-white font-semibold py-2.5 rounded-md text-xs shadow-md touch-active text-center"
-          >
-            Buy Now
-          </button>
-        </div>
+        <Link
+          to={inquiryUrl}
+          style={{ backgroundColor: GREEN }}
+          className="flex-1 max-w-[260px] text-white font-semibold py-3 rounded-md text-sm flex items-center justify-center gap-2 shadow-md touch-active"
+        >
+          <MessageCircle className="w-4 h-4" /> Enquire Now
+        </Link>
       </div>
 
     </div>

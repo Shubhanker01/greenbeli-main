@@ -18,7 +18,7 @@ export default function Hero() {
   return (
     <div>
       {/* ---------------------------- Hero ---------------------------- */}
-      <section className="relative overflow-hidden bg-cream">
+      <section className="relative overflow-hidden bg-transparent">
         {/* Soft light wash so the cream isn't flat */}
         <div
           aria-hidden="true"

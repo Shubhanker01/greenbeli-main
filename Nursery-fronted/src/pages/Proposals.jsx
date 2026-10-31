@@ -96,8 +96,8 @@ export default function Proposals() {
                     type="button"
                     onClick={() => setFormData({ ...formData, projectType: item.type })}
                     className={`p-4 rounded-2xl border text-left transition ${formData.projectType === item.type
-                        ? "border-emerald-600 bg-emerald-50 text-emerald-950 font-bold"
-                        : "border-slate-200 text-slate-700 hover:border-emerald-300"
+                      ? "border-emerald-600 bg-emerald-50 text-emerald-950 font-bold"
+                      : "border-slate-200 text-slate-700 hover:border-emerald-300"
                       }`}
                   >
                     <item.icon className="w-6 h-6 text-emerald-700 mb-2" />

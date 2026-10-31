@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Mail, Phone, MapPin, Clock, Send, Sparkles, HelpCircle, CheckCircle2 } from "lucide-react";
 import { submitLead } from "../utils/api";
+import { useSystemSettings } from "../context/SystemSettingsContext";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -10,17 +11,34 @@ export default function Contact() {
     subject: "General Inquiry",
     message: "",
   });
-
+  const {state} = useSystemSettings();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return; // ignore double clicks
+    setError("");
     setSubmitting(true);
-    await submitLead(formData);
-    setSubmitting(false);
-    setSubmitted(true);
-    setFormData({ name: "", email: "", phone: "", subject: "General Inquiry", message: "" });
+
+    try {
+      const result = await submitLead(formData);
+
+      // submitLead should throw on failure; also treat an explicit { success: false } as failure
+      if (result && result.success === false) {
+        throw new Error(result.message || "Submission failed");
+      }
+
+      setSubmitted(true);
+      setFormData({ name: "", email: "", phone: "", subject: "General Inquiry", message: "" });
+    } catch (err) {
+      console.error("Contact form error:", err);
+      // Keep what the user typed so they can try again; show one generic message
+      setError("Some error occurred while submitting the form. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const faqs = [
@@ -40,7 +58,7 @@ export default function Contact() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 space-y-16">
-      
+
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <span className="text-xs font-extrabold text-emerald-700 uppercase tracking-widest flex items-center justify-center gap-1.5">
@@ -55,18 +73,18 @@ export default function Contact() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-        
+
         {/* Contact Info Cards */}
         <div className="space-y-6">
           <div className="bg-emerald-950 text-white p-8 rounded-3xl space-y-6 shadow-xl relative overflow-hidden">
             <h3 className="serif-font text-xl font-bold">Nursery Hub Details</h3>
-            
+
             <div className="space-y-4 text-xs text-emerald-200/90">
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold text-white">Nursery Location</p>
-                  <p>GreenBeli Botanical Hub, Sector 18, City Gardens, India</p>
+                  <p>{state.address}</p>
                 </div>
               </div>
 
@@ -74,7 +92,7 @@ export default function Contact() {
                 <Phone className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 <div>
                   <p className="font-bold text-white">Phone Support</p>
-                  <p>+91 9950711475</p>
+                  <p>{state.supportPhone}</p>
                 </div>
               </div>
 
@@ -82,7 +100,7 @@ export default function Contact() {
                 <Mail className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                 <div>
                   <p className="font-bold text-white">Email Address</p>
-                  <p>support@greenbeli.in</p>
+                  <p>{state.supportEmail}</p>
                 </div>
               </div>
 
@@ -117,6 +135,12 @@ export default function Contact() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 text-sm font-medium p-4 rounded-xl">
+                  {error}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Your Name</label>
@@ -185,7 +209,7 @@ export default function Contact() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-sm px-8 py-3.5 rounded-2xl transition flex items-center gap-2 shadow-lg shadow-emerald-900/10"
+                className="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-sm px-8 py-3.5 rounded-2xl transition flex items-center gap-2 shadow-lg shadow-emerald-900/10 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4" /> {submitting ? "Submitting Inquiry..." : "Send Inquiry Now"}
               </button>

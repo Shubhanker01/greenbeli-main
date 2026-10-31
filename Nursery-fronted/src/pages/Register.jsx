@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Sprout, Mail, Lock, User, Phone, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
-  const navigate = useNavigate();
   const { register } = useAuth();
 
   const [name, setName] = useState("");
@@ -19,11 +18,25 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setConfirmationSent(false);
 
     // Basic phone validation matching backend normalizePhone expectations
     const rawPhone = phone.trim();
+    if (!name.trim()) {
+      setError("Full name is required.");
+      return;
+    }
+    if (!email.trim()) {
+      setError("Email address is required.");
+      return;
+    }
     if (!rawPhone) {
       setError("Mobile phone number is required.");
+      return;
+    }
+    const phoneDigits = rawPhone.replace(/\D/g, "").slice(-10);
+    if (!/^[6-9]\d{9}$/.test(phoneDigits)) {
+      setError("Enter a valid 10-digit mobile number.");
       return;
     }
     if (password.length < 8) {
@@ -32,21 +45,32 @@ export default function Register() {
     }
 
     setLoading(true);
-    const res = await register(name, email, password, rawPhone);
+    let res;
+    try {
+      res = await register(name, email, password, rawPhone);
+    } catch (err) {
+      setLoading(false);
+      setConfirmationSent(false);
+      setError(err?.message || "Registration failed. Please try again.");
+      return;
+    }
     setLoading(false);
 
-    if (res.success) {
-      if (res.requiresConfirmation) {
-        // Email confirmation mode: show success message, don't navigate
-        setConfirmationSent(true);
-        setConfirmationEmail(email);
-      } else {
-        // Immediate session: go to home
-        navigate("/");
-      }
-    } else {
-      setError(res.message || "Registration failed. Please try again.");
+    if (!res?.success) {
+      setConfirmationSent(false);
+      setError(res?.message || "Registration failed. Please try again.");
+      return;
     }
+
+    // Stay on this page — show inbox message; never redirect on success or error
+    if (res.requiresConfirmation) {
+      setConfirmationSent(true);
+      setConfirmationEmail(email);
+      return;
+    }
+
+    setConfirmationSent(true);
+    setConfirmationEmail(email);
   };
 
   // Email confirmation success screen
@@ -59,7 +83,7 @@ export default function Register() {
           <p className="text-sm text-slate-600 leading-relaxed">
             We've sent a confirmation link to{" "}
             <span className="font-bold text-emerald-800">{confirmationEmail}</span>.{" "}
-            Click the link to verify your account and start shopping.
+            Click the link within <span className="font-bold">15 minutes</span> to verify your account and start shopping.
           </p>
           <p className="text-xs text-slate-400">
             Didn't receive it? Check your spam folder or{" "}

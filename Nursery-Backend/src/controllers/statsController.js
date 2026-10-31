@@ -5,60 +5,52 @@ const User = require("../models/User");
 const Sale = require("../models/salemodel");
 const Lead = require("../models/Lead");
 const asyncHandler = require("../utils/asyncHandler");
+const Testimonial = require("../models/Testimonial");
+const Proposal = require("../models/proposals");
+
+// Sum of one numeric field across a collection (0 when the collection is empty)
+const sumOf = async (Model, field, match = {}) => {
+  const [row] = await Model.aggregate([
+    { $match: match },
+    { $group: { _id: null, total: { $sum: `$${field}` } } },
+  ]);
+  return Number(row?.total) || 0;
+};
 
 const dashboardStats = asyncHandler(async (_req, res) => {
-  const [
-    totalProducts,
-    categories,
-    totalOrders,
-    users,
-    revenueAgg,
-    salesCount,
-    salesRevenueAgg,
-    inquiryLeads,
-    pendingOrders,
-    recentOrderDocuments,
-  ] = await Promise.all([
-    Product.countDocuments({ isActive: true }),
-    Category.countDocuments(),
-    Order.countDocuments(),
-    User.countDocuments(),
-    Order.aggregate([
-      { $match: { orderStatus: { $ne: "Cancelled" } } },
-      { $group: { _id: null, total: { $sum: "$totalPrice" } } },
-    ]),
-    Sale.countDocuments(),
-    Sale.aggregate([{ $group: { _id: null, total: { $sum: "$totalAmount" } } }]),
-    Lead.countDocuments(),
-    Order.countDocuments({ orderStatus: { $in: ["Pending", "Processing"] } }),
-    Order.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate("user", "name firstName"),
-  ]);
+  // Results are matched to names by key, so adding or reordering queries can't misalign them
+  const queries = {
+    totalProducts: Product.countDocuments({ isActive: true }),
+    categories: Category.countDocuments(),
+    totalCustomers: User.countDocuments(),
+    inquiryLeads: Lead.countDocuments(),
+    totalProposals: Proposal.countDocuments(),
+    totalTestimonials: Testimonial.countDocuments(),
+    salesCount: Sale.countDocuments(),
+    salesRevenue: sumOf(Sale, "totalAmount"),
+    // Adjust the field name / filter to your Order schema (e.g. exclude cancelled orders)
+    orderRevenue: sumOf(Order, "totalAmount", { status: { $ne: "cancelled" } }),
+  };
 
-  const orderRevenue = Number(revenueAgg[0]?.total) || 0;
-  const salesRevenue = Number(salesRevenueAgg[0]?.total) || 0;
-  const recentOrders = recentOrderDocuments.map((order) => ({
-    _id: order._id,
-    customerName: order.user?.name || order.user?.firstName || "Customer",
-    totalAmount: order.totalPrice,
-    status: order.orderStatus,
-  }));
+  const keys = Object.keys(queries);
+  const values = await Promise.all(Object.values(queries));
+  const r = Object.fromEntries(keys.map((k, i) => [k, values[i]]));
 
   res.json({
-    totalRevenue: orderRevenue + salesRevenue,
-    totalOrders,
-    totalProducts,
-    inquiryLeads,
-    pendingOrders,
-    recentOrders,
-    products: totalProducts,
-    categories,
-    orders: totalOrders,
-    users,
-    salesCount,
-    salesRevenue,
+    // used by the new dashboard cards
+    totalProducts: r.totalProducts,
+    totalCustomers: r.totalCustomers,
+    inquiryLeads: r.inquiryLeads,
+    totalProposals: r.totalProposals,
+    totalTestimonials: r.totalTestimonials,
+
+    // kept for anything else that still reads them
+    totalRevenue: r.orderRevenue + r.salesRevenue,
+    products: r.totalProducts,
+    categories: r.categories,
+    users: r.totalCustomers,
+    salesCount: r.salesCount,
+    salesRevenue: r.salesRevenue,
   });
 });
 

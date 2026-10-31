@@ -12,7 +12,7 @@ const {
   updateCategory,
   deleteCategory,
 } = require("../controllers/categoryController");
-
+const { standardLimit } = require("../middleware/rateLimit");
 const categoryUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_IMAGE_BYTES, files: 1 },
@@ -22,8 +22,8 @@ router.get("/", listCategories);
 router.get("/slug/:slug", getCategoryBySlug);
 router.get("/:id", getCategoryById);
 
-router.post("/", requireAuth, categoryUpload.single("image"), createCategory);
-router.put("/:id", requireAuth, updateCategory);
-router.delete("/:id", requireAuth, deleteCategory);
+router.post("/", standardLimit, requireAuth, categoryUpload.single("image"), createCategory);
+router.put("/:id", standardLimit, requireAuth, updateCategory);
+router.delete("/:id", standardLimit, requireAuth, deleteCategory);
 
 module.exports = router;

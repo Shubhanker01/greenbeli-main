@@ -1,6 +1,9 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import api from "../lib/axios";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import LogoutModal from "./LogoutModal";
 import {
   LuLayoutDashboard,
   LuPackage,
@@ -15,12 +18,19 @@ import {
   LuMousePointerClick,
   LuFileText,
 } from "react-icons/lu";
-import { useAuth } from "../context/AuthContext";
+
+// Adjust to your backend route for the logout controller
+const LOGOUT_ENDPOINT = "/auth/logout";
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, isSuperAdmin } = useAuth();
+  const { refresh } = useAdminAuth();
+  const [logoutOpen, setLogoutOpen] = useState(false);
+
+  // Was undefined before (the page would crash). Every admin sees every item for now;
+  // replace with a real role check if you add a "super admin" role later.
+  const isSuperAdmin = true;
 
   const menu = useMemo(() => {
     const base = [
@@ -38,11 +48,13 @@ const Sidebar = ({ isOpen, onClose }) => {
     return base.filter((item) => !item.superOnly || isSuperAdmin);
   }, [isSuperAdmin]);
 
-  const confirmLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      logout();
-      navigate("/login", { replace: true });
-    }
+  // Runs when "Log out" is pressed in the modal. Throwing shows an error inside the modal.
+  const handleLogout = async () => {
+    await api.post(LOGOUT_ENDPOINT, {}); // server ends the session and clears the cookies
+    await refresh();                      // the auth context now says "not logged in"
+    setLogoutOpen(false);
+    window.innerWidth < 1024 && onClose();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -115,7 +127,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="p-6 border-t border-slate-50 bg-slate-50/30">
           <button
             type="button"
-            onClick={confirmLogout}
+            onClick={() => setLogoutOpen(true)}
             className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-white hover:bg-emerald-50 text-slate-500 hover:text-emerald-700 border border-slate-100 shadow-sm transition-all duration-300 group"
           >
             <div className="p-2 rounded-xl bg-slate-50 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
@@ -125,6 +137,12 @@ const Sidebar = ({ isOpen, onClose }) => {
           </button>
         </div>
       </div>
+
+      <LogoutModal
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        onConfirm={handleLogout}
+      />
     </>
   );
 };

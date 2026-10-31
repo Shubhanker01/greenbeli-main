@@ -15,87 +15,44 @@ export default function ConfirmEmail() {
         if (ran.current) return;
         ran.current = true;
 
-        // 1. Check URL hash (#access_token=... or #error=...) which Supabase returns for implicit token flow
-        const hash = window.location.hash ? window.location.hash.substring(1) : "";
-        const hashParams = new URLSearchParams(hash);
+        const token_hash = params.get("token_hash") || params.get("token");
 
-        const hashAccessToken = hashParams.get("access_token");
-        const hashError = hashParams.get("error");
-        const hashErrorDescription = hashParams.get("error_description");
-
-        // 2. Check query params (?token_hash=...&type=email or ?error=... or ?confirmed=1)
-        const token_hash = params.get("token_hash") || params.get("token") || hashParams.get("token_hash");
-        const type = params.get("type") || hashParams.get("type") || "email";
-        const queryError = params.get("error") || hashError;
-        const queryErrorDescription = params.get("error_description") || hashErrorDescription;
-        const alreadyConfirmed = params.get("confirmed") === "1";
-
-        // Case A: Supabase returned an explicit error in hash or query
-        if (queryError) {
-            return setState({
+        if (!token_hash) {
+            setState({
                 status: "error",
-                message: queryErrorDescription?.replace(/\+/g, " ") || "The confirmation link has expired or is invalid.",
+                message: "No confirmation token found in this link. It may have already been used.",
             });
-        }
-
-        // Case B: User arrived with access_token in URL hash (Supabase verified the email and redirected with tokens)
-        if (hashAccessToken) {
-            setState({
-                status: "success",
-                message: "Email confirmed successfully! Taking you to sign in…",
-            });
-            setTimeout(() => navigate("/login?confirmed=1", { replace: true }), 1800);
             return;
         }
 
-        // Case C: User arrived with confirmed=1 query parameter
-        if (alreadyConfirmed) {
-            setState({
-                status: "success",
-                message: "Your email has already been confirmed! Taking you to sign in…",
-            });
-            setTimeout(() => navigate("/login?confirmed=1", { replace: true }), 1800);
-            return;
-        }
-
-        // Case D: User has token_hash or token to verify via backend /api/confirm
-        if (token_hash) {
-            (async () => {
-                try {
-                    const res = await fetch(`${API_URL}/confirm`, {
-                        method: "POST",
-                        credentials: "include",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ token_hash, type }),
+        (async () => {
+            try {
+                const res = await fetch(`${API_URL}/confirm`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token_hash }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    setState({
+                        status: "success",
+                        message: "Email confirmed! Taking you to sign in…",
                     });
-                    const data = await res.json().catch(() => ({}));
-                    if (res.ok) {
-                        setState({
-                            status: "success",
-                            message: "Email confirmed! Taking you to your account…",
-                        });
-                        setTimeout(() => navigate("/login?confirmed=1", { replace: true }), 1800);
-                    } else {
-                        setState({
-                            status: "error",
-                            message: data.message || "This confirmation link is invalid or has expired.",
-                        });
-                    }
-                } catch {
+                    setTimeout(() => navigate("/login?confirmed=1", { replace: true }), 1800);
+                } else {
                     setState({
                         status: "error",
-                        message: "Network error. Please try again.",
+                        message: data.message || "This confirmation link is invalid or has expired.",
                     });
                 }
-            })();
-            return;
-        }
-
-        // Case E: Neither token_hash nor access_token found in URL
-        setState({
-            status: "error",
-            message: "No confirmation token found in this link. It may have already been used.",
-        });
+            } catch {
+                setState({
+                    status: "error",
+                    message: "Network error. Please try again.",
+                });
+            }
+        })();
     }, [params, navigate]);
 
     return (
@@ -150,4 +107,3 @@ export default function ConfirmEmail() {
         </div>
     );
 }
-

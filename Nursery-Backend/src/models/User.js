@@ -56,7 +56,16 @@ const userSchema = new mongoose.Schema(
     token: {
       type: String,
       default: null
-    }
+    },
+    token_hash: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    ttl: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

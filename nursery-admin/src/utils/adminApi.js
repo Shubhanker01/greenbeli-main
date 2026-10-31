@@ -234,5 +234,20 @@ export async function createSaleApi(saleData) {
 }
 
 export async function getSaleApi(id) {
-  return adminFetch(`/sales/${id}`);
+  return await adminFetch(`/sales/${id}`);
+}
+
+export async function getSettingsApi() {
+  return await adminFetch("/settings");
+}
+
+export async function updateSettingsApi(settings) {
+  return await adminFetch("/settings", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+  });
+}
+
+export async function logoutApi() {
+  return await adminFetch("/admin/logout");
 }

@@ -123,7 +123,7 @@ export default function Footer() {
 
                 {/* Social / Utility Icons from original imports */}
                 <div className="flex items-center gap-3 pt-2">
-                  <a
+                  {/* <a
                     href="#"
                     aria-label="Website"
                     className="w-8 h-8 rounded-full border border-emerald-800 flex items-center justify-center text-emerald-300 hover:bg-emerald-800 hover:text-white transition"
@@ -143,7 +143,7 @@ export default function Footer() {
                     className="w-8 h-8 rounded-full border border-emerald-800 flex items-center justify-center text-emerald-300 hover:bg-emerald-800 hover:text-white transition"
                   >
                     <Sparkles className="w-4 h-4" />
-                  </a>
+                  </a> */}
                 </div>
               </div>
 

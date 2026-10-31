@@ -1,18 +1,75 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { 
-  IndianRupee, 
-  ShoppingBag, 
-  Sprout, 
-  PhoneCall, 
-  TrendingUp, 
-  Plus, 
-  ArrowUpRight, 
-  Clock, 
+import {
+  IndianRupee,
+  ShoppingBag,
+  Sprout,
+  PhoneCall,
+  TrendingUp,
+  Plus,
+  ArrowUpRight,
+  Clock,
   AlertTriangle,
-  Receipt
+  Receipt,
+  Users,
+  FileText,
+  Star
 } from "lucide-react";
 import { getDashboardStatsApi, updateOrderStatusApi } from "../utils/adminApi";
+
+// One entry per KPI card: add or remove cards here
+const KPI_CARDS = [
+  {
+    key: "totalProducts",
+    span: "lg:col-span-2",
+    label: "Active Products",
+    note: "Currently active in catalog",
+    to: "/products",
+    icon: Sprout,
+    iconBox: "bg-amber-50 text-amber-700",
+    noteColor: "text-amber-600",
+  },
+  {
+    key: "totalCustomers",
+    span: "lg:col-span-2",
+    label: "Registered Customers",
+    note: "Confirmed shopper accounts",
+    to: "/customers",
+    icon: Users,
+    iconBox: "bg-sky-50 text-sky-700",
+    noteColor: "text-sky-600",
+  },
+  {
+    key: "inquiryLeads",
+    span: "lg:col-span-2",
+    label: "Inquiry Leads",
+    note: "Total submitted inquiries",
+    to: "/leads",
+    icon: PhoneCall,
+    iconBox: "bg-purple-50 text-purple-700",
+    noteColor: "text-purple-600",
+  },
+  {
+    key: "totalProposals",
+    span: "lg:col-span-3",
+    label: "Landscape Proposals",
+    note: "Proposals created so far",
+    to: "/proposals",
+    icon: FileText,
+    iconBox: "bg-emerald-50 text-emerald-700",
+    noteColor: "text-emerald-600",
+  },
+  {
+    key: "totalTestimonials",
+    span: "sm:col-span-2 lg:col-span-3",
+    label: "Testimonials",
+    note: "Customer reviews received",
+    to: "/testimonials",
+    icon: Star,
+    iconBox: "bg-rose-50 text-rose-700",
+    noteColor: "text-rose-600",
+  },
+];
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -90,170 +147,32 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
-        {/* Revenue */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-              <IndianRupee className="w-5 h-5" />
-            </div>
-          </div>
-          <div>
-            <h3 className="serif-font text-3xl font-bold text-slate-900">
-              ₹{(stats?.totalRevenue ?? 0).toLocaleString("en-IN")}
-            </h3>
-            <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
-              <TrendingUp className="w-3.5 h-3.5" /> Orders and counter sales
-            </span>
-          </div>
-        </div>
-
-        {/* Total Orders */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Orders</span>
-            <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-          </div>
-          <div>
-            <h3 className="serif-font text-3xl font-bold text-slate-900">
-              {stats?.totalOrders ?? 0}
-            </h3>
-            <span className="text-[11px] text-sky-600 font-bold flex items-center gap-1 mt-1">
-              <Clock className="w-3.5 h-3.5" /> {stats?.pendingOrders ?? 0} Pending Shipments
-            </span>
-          </div>
-        </div>
-
-        {/* Catalog Plants */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Products</span>
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
-              <Sprout className="w-5 h-5" />
-            </div>
-          </div>
-          <div>
-            <h3 className="serif-font text-3xl font-bold text-slate-900">
-              {stats?.totalProducts ?? 0}
-            </h3>
-            <span className="text-[11px] text-amber-600 font-bold flex items-center gap-1 mt-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> Currently active in catalog
-            </span>
-          </div>
-        </div>
-
-        {/* Customer Leads */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Inquiry Leads</span>
-            <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center">
-              <PhoneCall className="w-5 h-5" />
-            </div>
-          </div>
-          <div>
-            <h3 className="serif-font text-3xl font-bold text-slate-900">
-              {stats?.inquiryLeads ?? 0}
-            </h3>
-            <span className="text-[11px] text-purple-600 font-bold flex items-center gap-1 mt-1">
-              Total submitted inquiries
-            </span>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Main Grid: Recent Orders & Stock Alert */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Recent Orders Table */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <h3 className="serif-font font-bold text-slate-900 text-lg">Recent Orders</h3>
-            <Link to="/orders" className="text-xs font-bold text-emerald-800 hover:underline flex items-center gap-1">
-              View All Orders <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-2 font-bold">Order ID</th>
-                  <th className="py-3 px-2 font-bold">Customer</th>
-                  <th className="py-3 px-2 font-bold">Amount</th>
-                  <th className="py-3 px-2 font-bold">Status Lifecycle</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {stats?.recentOrders?.map((order) => (
-                  <tr key={order._id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3.5 px-2 font-bold text-slate-900">#{order._id}</td>
-                    <td className="py-3.5 px-2 text-slate-700 font-medium">{order.customerName || "Customer"}</td>
-                    <td className="py-3.5 px-2 font-extrabold text-emerald-950">₹{order.totalAmount}</td>
-                    <td className="py-3.5 px-2">
-                      <select
-                        value={order.status || "Processing"}
-                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                        className={`text-xs font-bold rounded-xl px-2.5 py-1 border focus:outline-none cursor-pointer ${
-                          order.status === "Delivered"
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                            : order.status === "Shipped"
-                            ? "bg-sky-100 text-sky-800 border-sky-300"
-                            : "bg-amber-100 text-amber-800 border-amber-300"
-                        }`}
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Processing">Processing</option>
-                        <option value="Shipped">Shipped</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Cancelled">Cancelled</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Low Stock Alert Box */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-4 text-amber-600">
-            <AlertTriangle className="w-5 h-5" />
-            <h3 className="serif-font font-bold text-slate-900 text-base">Low Stock Nursery Alert</h3>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { name: "Fiddle Leaf Fig", stock: 2, category: "Indoor Plants" },
-              { name: "Bougainvillea Bonsai", stock: 3, category: "Outdoor Plants" },
-              { name: "Peace Lily (Spathiphyllum)", stock: 4, category: "Indoor Plants" },
-            ].map((item, idx) => (
-              <div key={idx} className="p-3 rounded-2xl bg-amber-50/50 border border-amber-100 flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold text-xs text-slate-900">{item.name}</h4>
-                  <p className="text-[10px] text-slate-500">{item.category}</p>
-                </div>
-                <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
-                  {item.stock} left
-                </span>
-              </div>
-            ))}
-          </div>
-
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5">
+        {KPI_CARDS.map(({ key, label, note, to, span, icon: Icon, iconBox, noteColor }) => (
           <Link
-            to="/products"
-            className="block text-center text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 py-2.5 rounded-xl border border-emerald-200 transition"
+            key={key}
+            to={to}
+            className={`group bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4 transition hover:shadow-md hover:border-slate-300 ${span}`}
           >
-            Manage Inventory
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</span>
+              <div className={`w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center ${iconBox}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+            </div>
+            <div>
+              <h3 className="serif-font text-3xl font-bold text-slate-900">
+                {loading ? "…" : (stats?.[key] ?? 0).toLocaleString("en-IN")}
+              </h3>
+              <span className={`text-[11px] font-bold flex items-center gap-1 mt-1 ${noteColor}`}>
+                {note}
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-0 -translate-x-1 transition group-hover:opacity-100 group-hover:translate-x-0" />
+              </span>
+            </div>
           </Link>
-        </div>
-
+        ))}
       </div>
+
     </div>
   );
 }

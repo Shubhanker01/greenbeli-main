@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import api from "../lib/axios";
 import { useNavigate } from 'react-router-dom';
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 export default function MfaEnrollmentPage() {
     const navigate = useNavigate();
+    const { refresh } = useAdminAuth();
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
     const [secret, setSecret] = useState('');
     const [factorId, setFactorId] = useState('');
@@ -65,8 +67,14 @@ export default function MfaEnrollmentPage() {
             if (!data.success) {
                 throw new Error(data.message || 'Invalid verification code');
             }
-            navigate('/')
+            const session = await refresh();
+
+            if (session?.status !== 'ok') {
+                throw new Error('Verified, but your session could not be confirmed. Please log in again.');
+            }
+
             setSuccess(true);
+            setTimeout(() => navigate('/dashboard', { replace: true }), 800);
         } catch (err) {
             setError(err.response?.data?.message || err.message);
         }

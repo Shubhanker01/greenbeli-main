@@ -1,14 +1,27 @@
-const { crypto } = require("node:crypto");
+const crypto = require("node:crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { createClient } = require("../config/supabase.js");
+const { supabaseAdmin } = require("../config/admin.js");
 const { normalizePhone } = require("../utils/normalizePhone.js");
+const { sendEmailConfirmation } = require("../utils/email.js");
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
-const CONFIRM_TYPES = new Set(["email", "recovery", "magiclink", "email_change"]);
+const EMAIL_CONFIRM_TTL_MS = 15 * 60 * 1000;
 
 const publicUser = (u) => ({ id: u._id, name: u.name, email: u.email });
 
+const hashConfirmToken = (rawToken) =>
+  crypto.createHash("sha256").update(rawToken).digest("hex");
+
+const createConfirmToken = () => {
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  return {
+    rawToken,
+    token_hash: hashConfirmToken(rawToken),
+    ttl: new Date(Date.now() + EMAIL_CONFIRM_TTL_MS),
+  };
+};
 
 const generateToken = (userId) => {
   const secret = process.env.JWT_SECRET;
@@ -57,11 +70,15 @@ const register = async (req, res) => {
     const name = typeof req.body?.name === "string" ? req.body.name.trim().slice(0, 80) : "";
     const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
     const password = typeof req.body?.password === "string" ? req.body.password : "";
-    const phone = normalizePhone(req.body?.phone);
-    const supabase = createClient(req, res);
+    const phoneE164 = normalizePhone(req.body?.phone);
+    // User model stores a 10-digit Indian mobile; normalizePhone returns E.164 (+91…)
+    const phone = phoneE164 ? phoneE164.replace(/\D/g, "").slice(-10) : null;
 
     if (!name || !email || !password || !phone) {
       return res.status(400).json({ message: "Name, email password and phone are required" });
+    }
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ message: "Phone number must be exactly 10 digits" });
     }
     if (!EMAIL_RE.test(email)) {
       return res.status(400).json({ message: "Enter a valid email address" });
@@ -70,14 +87,12 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "Password must be 8-72 characters" });
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || process.env.SITE_URL || "http://localhost:5173";
-    const { data, error } = await supabase.auth.signUp({
+    // Create unconfirmed user via admin API so Supabase does not send its own email
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      options: {
-        data: { full_name: name, phone }, // stored in Supabase, copied to Mongo on first login
-        emailRedirectTo: `${frontendUrl}/confirm-email`,
-      },
+      email_confirm: false,
+      user_metadata: { full_name: name, phone: phoneE164 || phone },
     });
 
     if (error) {
@@ -88,25 +103,68 @@ const register = async (req, res) => {
         return res.status(400).json({ message: "That password is too weak. Try a longer one." });
       }
       // Existing email: answer exactly like a success so nobody can probe which emails are registered
-      if (error.code === "user_already_exists") {
+      if (
+        error.code === "user_already_exists" ||
+        error.code === "email_exists" ||
+        /already (been )?registered|already exists/i.test(error.message || "")
+      ) {
         return res.status(201).json({ message: "Check your email to confirm your account." });
       }
       console.error("Register error:", error.status, error.message);
       return res.status(500).json({ message: "Could not create your account" });
     }
 
-    // Email confirmation OFF: Supabase already logged the user in (cookies are set)
-    if (data.session && data.user) {
-      const user = await syncShopper(data.user);
-      return res.status(201).json({
-        user: { id: user._id, name: user.name, email: user.email },
+    const supabaseUser = data?.user;
+    if (!supabaseUser?.id) {
+      return res.status(500).json({ message: "Could not create your account" });
+    }
+
+    const { rawToken, token_hash, ttl } = createConfirmToken();
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const confirmationUrl = `${frontendUrl}/confirm-email?token_hash=${encodeURIComponent(rawToken)}`;
+
+    let user = await User.findOne({ email });
+    if (user) {
+      user.supabaseId = supabaseUser.id;
+      user.name = name;
+      user.phone = phone;
+      user.token_hash = token_hash;
+      user.ttl = ttl;
+      await user.save();
+    } else {
+      user = await User.create({
+        supabaseId: supabaseUser.id,
+        email,
+        name,
+        phone,
+        token_hash,
+        ttl,
       });
     }
 
-    // Email confirmation ON (recommended): no session until they click the link
+    const emailRes = await sendEmailConfirmation({
+      toEmail: email,
+      confirmationUrl,
+      name,
+      minutes: 15,
+    });
+    if (!emailRes.success) {
+      console.error("Register confirmation email failed:", emailRes.error);
+      // Account exists; user can request another link later. Still tell them to check email.
+    }
+
     return res.status(201).json({ message: "Check your email to confirm your account." });
   } catch (error) {
     console.error("Register error:", error.message);
+    if (error.name === "ValidationError") {
+      const first = error.errors && Object.values(error.errors)[0];
+      return res.status(400).json({
+        message: first?.message || error.message || "Invalid registration details",
+      });
+    }
+    if (error.code === 11000) {
+      return res.status(201).json({ message: "Check your email to confirm your account." });
+    }
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -115,25 +173,46 @@ const register = async (req, res) => {
 const confirmEmail = async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
-    const { token_hash, type } = req.body ?? {};
-    console.log(token_hash);
-    if (typeof token_hash !== "string" || token_hash.length < 10 || token_hash.length > 256 || !CONFIRM_TYPES.has(type)) {
+    const rawToken = typeof req.body?.token_hash === "string" ? req.body.token_hash.trim() : "";
+    if (!rawToken || rawToken.length < 10 || rawToken.length > 256) {
       return res.status(400).json({ code: "INVALID_TOKEN", message: "This confirmation link is invalid." });
     }
 
-    const supabase = createClient(req, res);
-    const { data, error } = await supabase.auth.verifyOtp({ token_hash, type }); // checks token + expiry, sets cookies
-    console.log(data)
-    if (error || !data?.user) {
-      // Expired, already used, or wrong: Supabase doesn't distinguish them reliably, so one message for all
+    const token_hash = hashConfirmToken(rawToken);
+    const user = await User.findOne({ token_hash });
+
+    if (!user || !user.ttl || user.ttl.getTime() < Date.now()) {
+      if (user) {
+        user.token_hash = null;
+        user.ttl = null;
+        await user.save().catch(() => {});
+      }
       return res.status(400).json({
         code: "TOKEN_EXPIRED_OR_INVALID",
         message: "This link is invalid or has expired. Please register again.",
       });
     }
 
-    // const user = await syncShopper(data.user); // email is verified now, so create the Mongo record
-    return res.status(200).json({ success: true, user: publicUser(data.user) });
+    if (!user.supabaseId) {
+      return res.status(400).json({
+        code: "TOKEN_EXPIRED_OR_INVALID",
+        message: "This link is invalid or has expired. Please register again.",
+      });
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(user.supabaseId, {
+      email_confirm: true,
+    });
+    if (error) {
+      console.error("confirmEmail supabase:", error.message);
+      return res.status(500).json({ message: "Could not confirm your email. Please try again." });
+    }
+
+    user.token_hash = null;
+    user.ttl = null;
+    await user.save();
+
+    return res.status(200).json({ success: true, user: publicUser(user) });
   } catch (err) {
     console.error("confirmEmail:", err.message);
     res.status(500).json({ message: "Server error" });

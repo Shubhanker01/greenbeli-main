@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { 
-  Sprout, 
-  Search, 
-  ShoppingBag, 
-  Heart, 
-  User, 
-  Menu, 
-  X, 
-  Leaf, 
-  ChevronDown, 
+import {
+  Sprout,
+  Search,
+  ShoppingBag,
+  Heart,
+  User,
+  Menu,
+  X,
+  Leaf,
+  ChevronDown,
   LogOut,
   PackageCheck,
   Sparkles,
@@ -26,14 +26,14 @@ import {
   Home as HomeIcon,
   LayoutGrid
 } from "lucide-react";
-import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useSystemSettings } from "../context/SystemSettingsContext";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { totalItems, wishlist, setIsCartOpen } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
+  const { state } = useSystemSettings();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -101,7 +101,7 @@ export default function Navbar() {
           </div>
           <div className="hidden sm:flex items-center gap-6 text-xs text-emerald-300">
             <a href="tel:+919950711475" className="flex items-center gap-1.5 hover:text-white transition">
-              <PhoneCall className="w-3.5 h-3.5" /> +91 9950711475
+              <PhoneCall className="w-3.5 h-3.5" /> {state.supportPhone}
             </a>
             <span>Free Express Delivery Over ₹499</span>
           </div>
@@ -110,7 +110,7 @@ export default function Navbar() {
         {/* Main Glass Navbar */}
         <nav className="glass-nav py-2.5 px-3 sm:px-8 transition-all">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            
+
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -140,9 +140,8 @@ export default function Navbar() {
               {/* 1. Home */}
               <Link
                 to="/"
-                className={`transition-colors py-2 relative hover:text-emerald-700 ${
-                  location.pathname === "/" ? "text-emerald-800 font-semibold" : ""
-                }`}
+                className={`transition-colors py-2 relative hover:text-emerald-700 ${location.pathname === "/" ? "text-emerald-800 font-semibold" : ""
+                  }`}
               >
                 Home
                 {location.pathname === "/" && (
@@ -153,9 +152,8 @@ export default function Navbar() {
               {/* 2. Direct "All Plants" Link */}
               <Link
                 to="/products"
-                className={`transition-colors py-2 relative hover:text-emerald-700 ${
-                  location.pathname === "/products" ? "text-emerald-800 font-semibold" : ""
-                }`}
+                className={`transition-colors py-2 relative hover:text-emerald-700 ${location.pathname === "/products" ? "text-emerald-800 font-semibold" : ""
+                  }`}
               >
                 All Plants
                 {location.pathname === "/products" && (
@@ -172,9 +170,8 @@ export default function Navbar() {
               >
                 <button
                   onClick={() => navigate("/products")}
-                  className={`flex items-center gap-1 py-2 transition-colors hover:text-emerald-700 ${
-                    location.pathname.startsWith("/category") ? "text-emerald-800 font-semibold" : ""
-                  }`}
+                  className={`flex items-center gap-1 py-2 transition-colors hover:text-emerald-700 ${location.pathname.startsWith("/category") ? "text-emerald-800 font-semibold" : ""
+                    }`}
                 >
                   Categories
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isShopDropdownOpen ? "rotate-180 text-emerald-600" : "text-slate-400"}`} />
@@ -215,9 +212,8 @@ export default function Navbar() {
               {/* 4. Landscaping Proposals */}
               <Link
                 to="/proposals"
-                className={`transition-colors py-2 relative flex items-center gap-1.5 hover:text-emerald-700 ${
-                  location.pathname === "/proposals" ? "text-emerald-800 font-semibold" : ""
-                }`}
+                className={`transition-colors py-2 relative flex items-center gap-1.5 hover:text-emerald-700 ${location.pathname === "/proposals" ? "text-emerald-800 font-semibold" : ""
+                  }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 Landscaping
@@ -235,11 +231,10 @@ export default function Navbar() {
               >
                 <button
                   onClick={() => setIsExploreDropdownOpen(!isExploreDropdownOpen)}
-                  className={`flex items-center gap-1 py-2 transition-colors hover:text-emerald-700 ${
-                    ["/gallery", "/testimonials", "/about", "/contact"].includes(location.pathname)
+                  className={`flex items-center gap-1 py-2 transition-colors hover:text-emerald-700 ${["/gallery", "/testimonials", "/about", "/contact"].includes(location.pathname)
                       ? "text-emerald-800 font-semibold"
                       : ""
-                  }`}
+                    }`}
                 >
                   Explore
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExploreDropdownOpen ? "rotate-180 text-emerald-600" : "text-slate-400"}`} />
@@ -283,32 +278,10 @@ export default function Navbar() {
               </button>
 
               {/* Wishlist */}
-              <Link
-                to="/profile?tab=wishlist"
-                className="relative p-1.5 sm:p-2 text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition hidden sm:inline-flex"
-                title="Wishlist"
-              >
-                <Heart className="w-5 h-5" />
-                {wishlist.length > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">
-                    {wishlist.length}
-                  </span>
-                )}
-              </Link>
+              
 
               {/* Cart Trigger */}
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="relative p-1.5 sm:p-2 text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition flex items-center gap-1.5 touch-active"
-                title="Shopping Bag"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                {totalItems > 0 && (
-                  <span className="bg-emerald-700 text-white rounded-full text-[10px] font-bold px-1.5 py-0.5 shadow">
-                    {totalItems}
-                  </span>
-                )}
-              </button>
+              
 
               {/* Profile Menu */}
               <div ref={profileDropdownRef} className="relative">
@@ -546,9 +519,8 @@ export default function Navbar() {
       <div className="glass-bottom-bar fixed bottom-0 left-0 right-0 z-40 sm:hidden py-1 px-4 flex items-center justify-around">
         <Link
           to="/"
-          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${
-            location.pathname === "/" ? "text-emerald-700 font-bold" : "text-slate-500"
-          }`}
+          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${location.pathname === "/" ? "text-emerald-700 font-bold" : "text-slate-500"
+            }`}
         >
           <HomeIcon className="w-5 h-5" />
           <span>Home</span>
@@ -556,11 +528,10 @@ export default function Navbar() {
 
         <Link
           to="/products"
-          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${
-            location.pathname.startsWith("/products") || location.pathname.startsWith("/category")
+          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${location.pathname.startsWith("/products") || location.pathname.startsWith("/category")
               ? "text-emerald-700 font-bold"
               : "text-slate-500"
-          }`}
+            }`}
         >
           <LayoutGrid className="w-5 h-5" />
           <span>Shop</span>
@@ -574,26 +545,12 @@ export default function Navbar() {
           <span>Search</span>
         </button>
 
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium text-slate-500 relative transition touch-active"
-        >
-          <div className="relative">
-            <ShoppingBag className="w-5 h-5" />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-2 bg-emerald-700 text-white rounded-full text-[9px] font-bold w-4 h-4 flex items-center justify-center">
-                {totalItems}
-              </span>
-            )}
-          </div>
-          <span>Cart</span>
-        </button>
+        
 
         <Link
           to={isAuthenticated ? "/profile" : "/login"}
-          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${
-            ["/profile", "/login", "/orders"].includes(location.pathname) ? "text-emerald-700 font-bold" : "text-slate-500"
-          }`}
+          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${["/profile", "/login", "/orders"].includes(location.pathname) ? "text-emerald-700 font-bold" : "text-slate-500"
+            }`}
         >
           <User className="w-5 h-5" />
           <span>{isAuthenticated ? "Profile" : "Account"}</span>

@@ -15,7 +15,7 @@ import {
   Droplets
 } from "lucide-react";
 import { getProductsPaginated, getCategories, resolveImageUrl } from "../utils/api";
-import { useCart } from "../context/CartContext";
+// import { useCart } from "../context/CartContext";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import { Reveal, RevealGroup } from "../components/Reveal";
 
@@ -23,7 +23,7 @@ const GREEN = "#1f4a34";
 const PAGE_SIZE = 9;
 
 export default function Gallery() {
-  const { addToCart, toggleWishlist, isInWishlist } = useCart();
+  // const { addToCart, toggleWishlist, isInWishlist } = useCart();
 
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -224,8 +224,8 @@ export default function Gallery() {
             {products.map((item, index) => {
               const imageUrl = resolveImageUrl(item.images?.[0] || item.image);
               const categoryTitle = item.categoryId?.name || item.category || "Indoor Botanical";
-              const isLiked = isInWishlist(item._id);
-              const isAdded = !!addedIds[item._id];
+              // const isLiked = isInWishlist(item._id);
+              // const isAdded = !!addedIds[item._id];
 
               return (
                 <div
@@ -249,7 +249,7 @@ export default function Gallery() {
                     </div>
 
                     {/* Wishlist toggle */}
-                    <button
+                    {/* <button
                       type="button"
                       onClick={(e) => handleWishlistToggle(e, item)}
                       aria-label="Add to wishlist"
@@ -258,7 +258,7 @@ export default function Gallery() {
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${isLiked ? "fill-white" : ""}`} />
-                    </button>
+                    </button> */}
 
                     {/* Floating Hover Actions */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0d261a]/85 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-4 sm:p-5 z-10">
@@ -270,7 +270,7 @@ export default function Gallery() {
                         <Eye className="w-3.5 h-3.5" /> Full Photo
                       </button>
 
-                      <button
+                      {/* <button
                         type="button"
                         onClick={(e) => handleQuickAdd(e, item)}
                         disabled={isAdded}
@@ -280,7 +280,7 @@ export default function Gallery() {
                         title="Add to shopping bag"
                       >
                         {isAdded ? <Check className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
-                      </button>
+                      </button> */}
                     </div>
                   </div>
 

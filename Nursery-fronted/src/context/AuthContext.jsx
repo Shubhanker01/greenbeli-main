@@ -69,11 +69,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (name, email, password, phone) => {
-    setState({ status: "authenticating", user: null, error: null });
+    // Keep current auth status while registering so the page does not jump/redirect
+    setState((current) => ({ ...current, error: null }));
     try {
       const response = await registerUser({ name, email, password, phone });
       if (!response.user) {
-        setState({ status: "unauthenticated", user: null, error: null });
+        setState((current) => ({
+          ...current,
+          status: current.status === "authenticated" ? current.status : "unauthenticated",
+          error: null,
+        }));
         return {
           success: true,
           requiresConfirmation: true,
@@ -102,7 +107,12 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       const message = error.message || "Registration failed.";
-      setState({ status: "unauthenticated", user: null, error: message });
+      setState((current) => ({
+        ...current,
+        status: current.status === "authenticated" ? "unauthenticated" : current.status || "unauthenticated",
+        user: null,
+        error: message,
+      }));
       return { success: false, message };
     }
   };

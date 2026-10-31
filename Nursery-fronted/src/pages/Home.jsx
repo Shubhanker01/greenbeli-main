@@ -1,18 +1,17 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 import PlantQuiz from "../components/PlantQuiz";
-import { getProducts, getCategories, getTestimonials, submitTestimonial } from "../utils/api";
+import { submitTestimonial } from "../utils/api";
 import Hero from "../components/Hero";
 import CategoryHighlight from "../components/CategoryHighlight";
 import FeaturedCollection from "../components/FeaturedCollection";
 import BotanicalSection from "../components/BotanicalSection";
 import TestimonialsSection, { TestimonialModal } from "../components/TestimonialsSection";
+import LeafClusters from "../components/LeafClusters";
 
 export default function Home() {
   const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState(false);
 
-  // Review form state
   const [reviewName, setReviewName] = useState("");
   const [reviewRole, setReviewRole] = useState("");
   const [reviewCity, setReviewCity] = useState("");
@@ -34,7 +33,7 @@ export default function Home() {
       };
 
       const res = await submitTestimonial(payload);
-      if(!res.success){
+      if (!res.success) {
         setReviewSuccess(false);
       }
       setReviewSubmitting(false);
@@ -55,50 +54,41 @@ export default function Home() {
     }
   };
 
-
   return (
+    <div className="relative space-y-16 overflow-hidden bg-cream pb-20 sm:space-y-24 sm:pb-24">
+      <LeafClusters />
 
-    <div className="space-y-16 sm:space-y-24 pb-20 sm:pb-24 overflow-hidden bg-cream">
+      <div className="relative z-10 space-y-16 sm:space-y-24">
+        <Hero />
+        <CategoryHighlight />
+        <FeaturedCollection />
 
-      {/* 1. HERO SECTION - Ultra Luxury Botanical Showcase */}
-      <Hero />
+        <section id="plant-quiz" className="relative z-10 mx-auto w-full max-w-7xl min-w-0 px-3 sm:px-8">
+          <PlantQuiz />
+        </section>
 
-      {/* 2. CATEGORY HIGHLIGHT CARDS */}
-      <CategoryHighlight />
+        <BotanicalSection />
 
+        <TestimonialsSection onShare={() => setIsTestimonialModalOpen(true)} />
 
-      {/* 3. FEATURED COLLECTION TABS & PRODUCTS */}
-      <FeaturedCollection />
-
-      {/* 4. INTERACTIVE PLANT FINDER QUIZ */}
-      <section id="plant-quiz" className="max-w-7xl mx-auto px-4 sm:px-8">
-        <PlantQuiz />
-      </section>
-
-      {/* 5. BOTANICAL EXCELLENCE & GUARANTEE */}
-      <BotanicalSection />
-
-      {/* 6. TESTIMONIALS CAROUSEL */}
-
-
-      <TestimonialsSection
-        onShare={() => setIsTestimonialModalOpen(true)}
-      />
-
-      <TestimonialModal
-        open={isTestimonialModalOpen}
-        onClose={() => setIsTestimonialModalOpen(false)}
-        reviewSuccess={reviewSuccess}
-        reviewSubmitting={reviewSubmitting}
-        handleTestimonialSubmit={handleTestimonialSubmit}
-        reviewName={reviewName} setReviewName={setReviewName}
-        reviewRole={reviewRole} setReviewRole={setReviewRole}
-        reviewCity={reviewCity} setReviewCity={setReviewCity}
-        reviewRating={reviewRating} setReviewRating={setReviewRating}
-        reviewComment={reviewComment} setReviewComment={setReviewComment}
-      />
-
+        <TestimonialModal
+          open={isTestimonialModalOpen}
+          onClose={() => setIsTestimonialModalOpen(false)}
+          reviewSuccess={reviewSuccess}
+          reviewSubmitting={reviewSubmitting}
+          handleTestimonialSubmit={handleTestimonialSubmit}
+          reviewName={reviewName}
+          setReviewName={setReviewName}
+          reviewRole={reviewRole}
+          setReviewRole={setReviewRole}
+          reviewCity={reviewCity}
+          setReviewCity={setReviewCity}
+          reviewRating={reviewRating}
+          setReviewRating={setReviewRating}
+          reviewComment={reviewComment}
+          setReviewComment={setReviewComment}
+        />
+      </div>
     </div>
-
   );
 }
