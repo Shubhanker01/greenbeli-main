@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { authMiddleware } = require("../middleware/authMiddleware");
+const { requireUser } = require("../middleware/authMiddleware");
 const {
   getCart,
   addOrUpdateItem,
@@ -9,7 +9,7 @@ const {
   clearCart,
 } = require("../controllers/cartController");
 
-router.use(authMiddleware);
+router.use(requireUser);
 
 router.get("/", getCart);
 router.post("/items", addOrUpdateItem);

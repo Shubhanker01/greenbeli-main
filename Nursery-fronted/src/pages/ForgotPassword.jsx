@@ -1,26 +1,25 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
-import { fetchApi } from "../utils/api";
+import { requestPasswordResetApi } from "../utils/api";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
-      await fetchApi("/forgot-password", {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      });
-    } catch (e) {
-      // smooth UX
+      await requestPasswordResetApi(email);
+      setSent(true);
+    } catch (requestError) {
+      setError(requestError.message || "Unable to send reset instructions. Please try again.");
     } finally {
       setLoading(false);
-      setSent(true);
     }
   };
 
@@ -41,11 +40,16 @@ export default function ForgotPassword() {
             <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
             <h3 className="font-bold text-sm">Reset Link Sent!</h3>
             <p className="text-xs text-slate-600">
-              Check your inbox ({email}) for instructions to reset your account password.
+              If an account exists for <strong>{email}</strong>, reset instructions will arrive shortly. The link expires in 15 minutes.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <p role="alert" className="text-xs text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl">
+                {error}
+              </p>
+            )}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">Email Address</label>
               <div className="relative">

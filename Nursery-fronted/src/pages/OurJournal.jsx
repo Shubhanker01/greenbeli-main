@@ -1,11 +1,13 @@
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Droplets, Leaf, Sun } from "lucide-react";
 import { Reveal, RevealGroup } from "../components/Reveal";
+import { getJournalArticlesApi } from "../utils/api";
 
 const GREEN = "#1f4a34";
 const SAGE = "#cfe3c8";
 
-const JOURNAL_NOTES = [
+const DEFAULT_NOTES = [
   {
     category: "Plant care",
     title: "A gentler way to water",
@@ -14,7 +16,6 @@ const JOURNAL_NOTES = [
     image:
       "https://images.unsplash.com/photo-1497250681960-ef046c08a56e?q=80&w=1000&auto=format&fit=crop",
     imageAlt: "Water droplets on the leaves of a green houseplant",
-    icon: Droplets,
   },
   {
     category: "Light & living",
@@ -24,7 +25,6 @@ const JOURNAL_NOTES = [
     image:
       "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?q=80&w=1000&auto=format&fit=crop",
     imageAlt: "Houseplants growing in a softly lit home",
-    icon: Sun,
   },
   {
     category: "Growing well",
@@ -34,11 +34,30 @@ const JOURNAL_NOTES = [
     image:
       "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1000&auto=format&fit=crop",
     imageAlt: "Fresh green foliage growing toward the light",
-    icon: Leaf,
   },
 ];
 
 export default function OurJournal() {
+  const [articles, setArticles] = useState(DEFAULT_NOTES);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchJournal() {
+      try {
+        const data = await getJournalArticlesApi();
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setArticles(data);
+        }
+      } catch (e) {
+        // Fall back to default articles
+      }
+    }
+    fetchJournal();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen overflow-hidden bg-cream pb-20 text-slate-800 sm:pb-28">
       <section className="relative overflow-hidden">
@@ -75,36 +94,33 @@ export default function OurJournal() {
               </p>
             </Reveal>
 
-            <Reveal>
+            <Reveal className="flex flex-wrap items-center gap-x-6 gap-y-4 pt-2">
               <a
                 href="#journal-notes"
                 style={{ backgroundColor: GREEN }}
-                className="group inline-flex items-center gap-2 rounded-md px-7 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-950/15 transition hover:brightness-90 touch-active"
+                className="group inline-flex items-center gap-2 rounded-md px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-emerald-950/15 transition hover:brightness-90"
               >
-                Explore the journal
-                <ArrowUpRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                Read latest notes
+                <ArrowUpRight className="h-5 w-5 rotate-90 transition-transform duration-300 group-hover:translate-y-0.5" />
               </a>
+
+              <Link
+                to="/products"
+                style={{ color: GREEN }}
+                className="text-base font-semibold underline underline-offset-4 decoration-2 decoration-transparent transition hover:decoration-current"
+              >
+                Browse all plants
+              </Link>
             </Reveal>
           </RevealGroup>
 
-          <Reveal delay={0.15} className="relative">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-tl-[4rem] rounded-br-[4rem] rounded-tr-md rounded-bl-md bg-emerald-100/60 shadow-2xl shadow-emerald-950/10 sm:rounded-tl-[7rem] sm:rounded-br-[7rem]">
+          <Reveal effect="rise" duration={0.9} delay={0.25} className="relative">
+            <div className="group relative aspect-[4/3] overflow-hidden rounded-tl-[5rem] rounded-tr-lg rounded-b-lg shadow-2xl shadow-stone-900/15 sm:rounded-tl-[8rem] lg:aspect-[6/5] lg:rounded-tl-[10rem]">
               <img
-                src="https://images.unsplash.com/photo-1485955900006-10f4d324d411?q=80&w=1200&auto=format&fit=crop"
-                alt="A collection of leafy houseplants filling a bright space"
-                className="h-full w-full object-cover"
+                src="https://images.unsplash.com/photo-1545241047-6083a3684587?q=80&w=1200&auto=format&fit=crop"
+                alt="A quiet reading corner with potted plants"
+                className="h-full w-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-105"
               />
-            </div>
-            <div className="absolute -bottom-5 left-3 max-w-[230px] rounded-md border border-stone-200/80 bg-white/95 p-4 shadow-xl backdrop-blur-md sm:bottom-6 sm:-left-6 sm:p-5">
-              <p
-                style={{ color: GREEN }}
-                className="serif-font text-lg font-bold"
-              >
-                Grow at your own pace
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-stone-600">
-                Practical inspiration for every kind of plant parent.
-              </p>
             </div>
           </Reveal>
         </div>
@@ -144,10 +160,16 @@ export default function OurJournal() {
           delay={0.05}
           className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
         >
-          {JOURNAL_NOTES.map(
-            ({ category, title, description, image, imageAlt, icon: Icon }) => (
+          {articles.map((item, index) => {
+            const title = item.title || "Plant Note";
+            const category = item.category || "Plant care";
+            const description = item.description || "";
+            const image = item.image || "https://images.unsplash.com/photo-1497250681960-ef046c08a56e?q=80&w=1000&auto=format&fit=crop";
+            const imageAlt = item.imageAlt || title;
+
+            return (
               <Reveal
-                key={title}
+                key={item._id || item.slug || title + index}
                 className="group overflow-hidden rounded-xl border border-stone-200/80 bg-white/75 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-950/10"
               >
                 <div className="aspect-[16/10] overflow-hidden bg-emerald-100/60">
@@ -163,7 +185,7 @@ export default function OurJournal() {
                       style={{ color: GREEN, backgroundColor: `${SAGE}80` }}
                       className="flex h-8 w-8 items-center justify-center rounded-full"
                     >
-                      <Icon className="h-4 w-4" strokeWidth={1.7} />
+                      <Leaf className="h-4 w-4" strokeWidth={1.7} />
                     </span>
                     <p
                       style={{ color: GREEN }}
@@ -183,8 +205,8 @@ export default function OurJournal() {
                   </p>
                 </div>
               </Reveal>
-            ),
-          )}
+            );
+          })}
         </RevealGroup>
       </section>
 
@@ -193,32 +215,24 @@ export default function OurJournal() {
           style={{ backgroundColor: GREEN, color: "var(--color-cream)" }}
           className="relative overflow-hidden rounded-tl-[4.5rem] rounded-tr-xl rounded-b-xl p-7 shadow-2xl shadow-emerald-950/25 sm:rounded-tl-[8rem] sm:p-12 lg:rounded-tl-[10rem] lg:p-16"
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.10),transparent_60%)]"
-          />
-          <Reveal className="relative z-10 mx-auto max-w-3xl space-y-5 py-5 text-center sm:py-8">
-            <p
-              style={{ color: SAGE }}
-              className="text-xs font-bold uppercase tracking-[0.18em] sm:text-sm"
-            >
-              Find your next favorite
-            </p>
-            <h2 className="serif-font text-3xl font-bold leading-tight sm:text-5xl">
-              A good day can start with a new leaf.
+          <div className="relative z-10 max-w-2xl space-y-4 sm:space-y-6">
+            <h2 className="serif-font text-3xl font-medium leading-tight sm:text-5xl">
+              Want more plant care ideas delivered quietly?
             </h2>
-            <p className="mx-auto max-w-xl text-base leading-relaxed text-stone-200/90 sm:text-lg">
-              Bring a little more green into your space and let the growing
-              begin.
+            <p className="text-base leading-relaxed opacity-90 sm:text-lg">
+              Explore our plant catalog or consult our nursery experts whenever you
+              need tips for your space.
             </p>
-            <Link
-              to="/products"
-              className="group inline-flex items-center gap-2 rounded-md bg-cream px-7 py-4 text-base font-semibold text-[#1f4a34] shadow-lg transition hover:bg-white touch-active"
-            >
-              Browse our plants
-              <ArrowUpRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
-          </Reveal>
+            <div className="pt-2">
+              <Link
+                to="/products"
+                className="inline-flex items-center gap-2 rounded-md bg-white px-7 py-3.5 text-base font-semibold text-[#1f4a34] shadow-md transition hover:bg-stone-100"
+              >
+                Browse catalog
+                <ArrowUpRight className="h-5 w-5" />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </div>

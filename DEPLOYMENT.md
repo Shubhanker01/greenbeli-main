@@ -9,7 +9,7 @@ This guide details how to build, run, and deploy the entire GreenBeli Nursery st
 | Service | Container Name | Internal Port | Exposed Host Port | Subdomain |
 |---|---|---|---|---|
 | **MongoDB** | `greenbeli_mongo` | `27017` | `27017` | Local DB |
-| **Backend API** | `greenbeli_backend` | `5008` | `5008` | `api.greenbeli.in` |
+| **Backend API** | `greenbeli_backend` | `5007` | `5007` | `api.greenbeli.in` |
 | **Frontend Web** | `greenbeli_frontend` | `80` | `3000` | `greenbeli.in` / `www.greenbeli.in` |
 | **Admin Panel** | `greenbeli_admin` | `80` | `3001` | `admin.greenbeli.in` |
 
@@ -73,7 +73,7 @@ server {
     server_name api.greenbeli.in;
 
     location / {
-        proxy_pass http://127.0.0.1:5008;
+        proxy_pass http://127.0.0.1:5007;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';

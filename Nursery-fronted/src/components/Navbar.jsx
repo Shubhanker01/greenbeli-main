@@ -26,12 +26,14 @@ import {
   Home as HomeIcon,
   LayoutGrid
 } from "lucide-react";
+import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useSystemSettings } from "../context/SystemSettingsContext";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { totalItems, wishlist, setIsCartOpen } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
   const { state } = useSystemSettings();
 
@@ -278,10 +280,32 @@ export default function Navbar() {
               </button>
 
               {/* Wishlist */}
-              
+              <Link
+                to="/profile?tab=wishlist"
+                className="relative p-1.5 sm:p-2 text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition hidden sm:inline-flex"
+                title="Wishlist"
+              >
+                <Heart className="w-5 h-5" />
+                {wishlist && wishlist.length > 0 && (
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">
+                    {wishlist.length}
+                  </span>
+                )}
+              </Link>
 
               {/* Cart Trigger */}
-              
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="relative p-1.5 sm:p-2 text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition flex items-center gap-1.5 touch-active"
+                title="Shopping Bag"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {totalItems > 0 && (
+                  <span className="bg-emerald-700 text-white rounded-full text-[10px] font-bold px-1.5 py-0.5 shadow">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
 
               {/* Profile Menu */}
               <div ref={profileDropdownRef} className="relative">
@@ -545,9 +569,20 @@ export default function Navbar() {
           <span>Search</span>
         </button>
 
-        
-
-        <Link
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium text-slate-500 relative transition touch-active"
+        >
+          <div className="relative">
+            <ShoppingBag className="w-5 h-5" />
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-2 bg-emerald-700 text-white rounded-full text-[9px] font-bold w-4 h-4 flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
+          </div>
+          <span>Cart</span>
+        </button>        <Link
           to={isAuthenticated ? "/profile" : "/login"}
           className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${["/profile", "/login", "/orders"].includes(location.pathname) ? "text-emerald-700 font-bold" : "text-slate-500"
             }`}

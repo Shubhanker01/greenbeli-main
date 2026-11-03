@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -8,11 +9,12 @@ import {
   Sprout,
 } from "lucide-react";
 import { Reveal, RevealGroup } from "../components/Reveal";
+import { getFaqsApi } from "../utils/api";
 
 const GREEN = "#1f4a34";
 const SAGE = "#cfe3c8";
 
-const FAQ_SECTIONS = [
+const DEFAULT_FAQ_SECTIONS = [
   {
     id: "plants",
     icon: Leaf,
@@ -44,44 +46,78 @@ const FAQ_SECTIONS = [
       {
         question: "How are plants prepared for delivery?",
         answer:
-          "We take care to prepare and protect plants for their journey. Delivery estimates and any applicable shipping charges are shown during checkout and in your order updates.",
+          "We prepare plants thoughtfully and package them securely in breathable, protective cartons with root moisture retainers to keep foliage safe in transit.",
       },
       {
-        question: "What should I do if my plant arrives damaged?",
+        question: "What if my plant arrives in poor condition?",
         answer:
-          "Please contact us within 7 days of delivery with your order details and clear photos of the plant and packaging. Our team will review the information and guide you through the next steps under the 7-day transit guarantee.",
-        link: { to: "/shipping-returns", label: "Read shipping & returns details" },
+          "Please reach out within 48 hours of delivery with photos of the plant and packaging so we can assess how to help with replacement support.",
+        link: { to: "/contact", label: "Contact our team" },
       },
       {
-        question: "Where can I check shipping and return information?",
+        question: "Can I track my delivery?",
         answer:
-          "Our Shipping & Returns page explains what to expect during delivery and how to get help if your order arrives with an issue.",
-        link: { to: "/shipping-returns", label: "Shipping & returns" },
+          "Yes, we provide dispatch details and delivery updates so you can follow your order on its way.",
       },
     ],
   },
   {
     id: "support",
     icon: Sprout,
-    title: "Help & support",
+    title: "Care & support",
     questions: [
       {
-        question: "Can I get help with a plant-care question?",
+        question: "Can I ask questions after my plant arrives?",
         answer:
-          "Yes. Send us a message with the plant name, a description of what you are noticing, and a photo if you can. Our team will do its best to point you in the right direction.",
-        link: { to: "/contact", label: "Contact our team" },
+          "Yes. Our horticulture team is always happy to answer care questions and guide you as your plant settles in.",
+        link: { to: "/contact", label: "Ask a plant question" },
       },
       {
-        question: "Do you help with garden or office planting projects?",
+        question: "Are your plants grown sustainably?",
         answer:
-          "We accept custom landscape and planting inquiries for spaces such as balconies, homes, and offices. Share a few details about your project on our Proposals page and our team can follow up.",
-        link: { to: "/proposals", label: "Make a project inquiry" },
+          "We care about healthy, responsible growing practices that give plants the time, soil, and attention they need to thrive naturally.",
       },
     ],
   },
 ];
 
 export default function FAQs() {
+  const [sections, setSections] = useState(DEFAULT_FAQ_SECTIONS);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFaqs() {
+      try {
+        const items = await getFaqsApi();
+        console.log(items);
+        if (!cancelled && Array.isArray(items) && items.length > 0) {
+          // Group DB FAQs by category
+          const grouped = {};
+          items.forEach((faq) => {
+            const cat = faq.category || "General";
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push(faq);
+          });
+          const dynamicSections = Object.entries(grouped).map(([catName, questions], idx) => ({
+            id: `faq-cat-${idx}`,
+            icon: Leaf,
+            title: catName,
+            questions,
+          }));
+          setSections(dynamicSections);
+          console.log(dynamicSections)
+        }
+      } catch (e) {
+        console.log(e)
+        // Fall back to default sections
+      }
+    }
+    loadFaqs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen overflow-hidden bg-cream pb-20 text-slate-800 sm:pb-28">
       <section className="relative overflow-hidden">
@@ -119,7 +155,7 @@ export default function FAQs() {
       </section>
 
       <div className="mx-auto max-w-4xl space-y-14 px-4 sm:px-8 sm:space-y-16">
-        {FAQ_SECTIONS.map(({ id, icon: Icon, title, questions }) => (
+        {sections.map(({ id, icon: Icon, title, questions }) => (
           <section key={id} id={id} className="scroll-mt-8">
             <Reveal className="mb-5 flex items-center gap-4 border-b border-stone-300/80 pb-5">
               <span
@@ -138,28 +174,35 @@ export default function FAQs() {
 
             <RevealGroup stagger={0.08} className="divide-y divide-stone-300/80">
               {questions.map(({ question, answer, link }) => (
-                <Reveal key={question}>
-                  <details className="group py-5">
-                    <summary
-                      style={{ color: GREEN }}
-                      className="flex cursor-pointer list-none items-center justify-between gap-5 text-left text-base font-semibold marker:content-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 sm:text-lg"
-                    >
-                      <span>{question}</span>
-                      <ChevronDown
-                        aria-hidden="true"
-                        className="h-5 w-5 shrink-0 transition-transform duration-200 group-open:rotate-180"
-                      />
+                <Reveal key={question} className="py-6 sm:py-8">
+                  <details className="group [&_summary::-webkit-details-marker]:hidden">
+                    <summary className="flex cursor-pointer items-start justify-between gap-4 text-left">
+                      <h3
+                        style={{ color: GREEN }}
+                        className="serif-font text-xl font-bold leading-snug sm:text-2xl"
+                      >
+                        {question}
+                      </h3>
+                      <span
+                        style={{ color: GREEN }}
+                        className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-stone-200/60 transition group-open:rotate-180"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </span>
                     </summary>
-                    <div className="max-w-3xl space-y-3 pr-8 pt-4 text-sm leading-relaxed text-stone-600 sm:text-base">
+                    <div className="pt-4 text-base leading-relaxed text-stone-600 sm:text-lg">
                       <p>{answer}</p>
                       {link && (
-                        <Link
-                          to={link.to}
-                          className="inline-flex items-center gap-1 font-semibold text-[#1f4a34] underline underline-offset-4 transition hover:text-emerald-700"
-                        >
-                          {link.label}
-                          <ArrowUpRight className="h-4 w-4" />
-                        </Link>
+                        <div className="pt-4">
+                          <Link
+                            to={link.to}
+                            style={{ color: GREEN }}
+                            className="inline-flex items-center gap-1.5 text-sm font-semibold underline underline-offset-4"
+                          >
+                            {link.label}
+                            <ArrowUpRight className="h-4 w-4" />
+                          </Link>
+                        </div>
                       )}
                     </div>
                   </details>
@@ -170,36 +213,31 @@ export default function FAQs() {
         ))}
       </div>
 
-      <section className="mx-auto mt-16 max-w-7xl px-4 sm:px-8 sm:mt-24">
+      <section className="mx-auto mt-20 max-w-4xl px-4 sm:px-8">
         <div
-          style={{ backgroundColor: GREEN, color: "var(--color-cream)" }}
-          className="relative overflow-hidden rounded-tl-[4.5rem] rounded-tr-xl rounded-b-xl p-7 shadow-2xl shadow-emerald-950/25 sm:rounded-tl-[8rem] sm:p-12 lg:rounded-tl-[10rem] lg:p-16"
+          style={{ backgroundColor: SAGE }}
+          className="rounded-2xl p-8 text-center sm:p-12"
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.10),transparent_60%)]"
-          />
-          <Reveal className="relative z-10 mx-auto max-w-3xl space-y-5 py-5 text-center sm:py-8">
-            <p
-              style={{ color: SAGE }}
-              className="text-xs font-bold uppercase tracking-[0.18em] sm:text-sm"
-            >
-              Still have a question?
-            </p>
-            <h2 className="serif-font text-3xl font-bold leading-tight sm:text-5xl">
-              We’re happy to help you grow.
-            </h2>
-            <p className="mx-auto max-w-xl text-base leading-relaxed text-stone-200/90 sm:text-lg">
-              Get in touch with our team and let us know what you need.
-            </p>
+          <h2
+            style={{ color: GREEN }}
+            className="serif-font text-2xl font-bold sm:text-3xl"
+          >
+            Still have a question?
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-stone-600 sm:text-base">
+            Reach out to our plant experts anytime. We are happy to help you find
+            the right plant or troubleshoot any care issue.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/contact"
-              className="group inline-flex items-center gap-2 rounded-md bg-cream px-7 py-4 text-base font-semibold text-[#1f4a34] shadow-lg transition hover:bg-white touch-active"
+              style={{ backgroundColor: GREEN }}
+              className="inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:brightness-90"
             >
-              Contact us
-              <ArrowUpRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              Get in touch
+              <ArrowUpRight className="h-4 w-4" />
             </Link>
-          </Reveal>
+          </div>
         </div>
       </section>
     </div>

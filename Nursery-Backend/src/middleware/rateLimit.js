@@ -30,6 +30,14 @@ const publicSubmitLimit = rateLimit({
     message: { success: false, message: "Too many submissions. Please try again later." },
 });
 
+const reviewSubmitLimit = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Too many review submissions. Please try again later." },
+});
+
 // A short burst guard on top, so a script can't spend all 5 in a second
 const burstLimit = rateLimit({
     windowMs: 60 * 1000,
@@ -40,4 +48,4 @@ const burstLimit = rateLimit({
 });
 
 
-module.exports = { loginLimiter, standardLimit, publicSubmitLimit, burstLimit };
+module.exports = { loginLimiter, standardLimit, publicSubmitLimit, reviewSubmitLimit, burstLimit };

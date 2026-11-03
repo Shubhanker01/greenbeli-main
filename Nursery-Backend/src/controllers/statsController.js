@@ -7,6 +7,8 @@ const Lead = require("../models/Lead");
 const asyncHandler = require("../utils/asyncHandler");
 const Testimonial = require("../models/Testimonial");
 const Proposal = require("../models/proposals");
+const Journal = require("../models/Journal");
+const Faq = require("../models/Faq");
 
 // Sum of one numeric field across a collection (0 when the collection is empty)
 const sumOf = async (Model, field, match = {}) => {
@@ -26,6 +28,9 @@ const dashboardStats = asyncHandler(async (_req, res) => {
     inquiryLeads: Lead.countDocuments(),
     totalProposals: Proposal.countDocuments(),
     totalTestimonials: Testimonial.countDocuments(),
+    totalOrders: Order.countDocuments(),
+    totalJournals: Journal.countDocuments(),
+    totalFaqs: Faq.countDocuments(),
     salesCount: Sale.countDocuments(),
     salesRevenue: sumOf(Sale, "totalAmount"),
     // Adjust the field name / filter to your Order schema (e.g. exclude cancelled orders)
@@ -43,6 +48,9 @@ const dashboardStats = asyncHandler(async (_req, res) => {
     inquiryLeads: r.inquiryLeads,
     totalProposals: r.totalProposals,
     totalTestimonials: r.totalTestimonials,
+    totalOrders: r.totalOrders,
+    totalJournals: r.totalJournals,
+    totalFaqs: r.totalFaqs,
 
     // kept for anything else that still reads them
     totalRevenue: r.orderRevenue + r.salesRevenue,

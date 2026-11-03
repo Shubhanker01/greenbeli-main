@@ -194,7 +194,7 @@ exports.loginAdmin = async (req, res) => {
           $set: { lastFailedAt: new Date(), updatedAt: new Date() }
         }, {
         upsert: true,
-        new: true
+        returnDocument: 'after'
       }
       )
       if (tracker.passwordFailures >= 5) {
@@ -212,15 +212,15 @@ exports.loginAdmin = async (req, res) => {
           });
         }
 
-        const siteUrl = process.env.SITE_URL;
+        const siteUrl = process.env.SITE_URL || "http://localhost:5174";
         const resetUrl = `${siteUrl}/admin/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
-        console.warn(`[SECURITY ALERT] 5 failed password attempts for ${email}. Account locked. Reset URL: ${resetUrl}`);
+        console.warn(`[SECURITY ALERT] 5 failed password attempts for ${email}. Account locked.`);
 
-        // Dispatch emergency recovery link via Resend
+        // Dispatch emergency recovery link via email
         sendPasswordResetEmail({
           toEmail: email,
           resetUrl,
-        }).catch((e) => console.error('Failed to send lockout reset email:', e));
+        }).catch((e) => console.error('Failed to send lockout reset email:', e.message));
 
         return res.status(423).json({
           success: false,
@@ -371,37 +371,48 @@ exports.deleteAdmin = async (req, res) => {
 
 exports.forgotPassword = async (req, res) => {
   try {
-    const admin = await Admin.findOne({ email: req.body.email });
+    const { email } = req.body || {};
+    const emailNorm = email ? String(email).toLowerCase().trim() : "";
 
-    if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
+    const genericResponse = {
+      success: true,
+      message: "If this email belongs to an administrator, a password reset link has been dispatched.",
+    };
+
+    if (!emailNorm) {
+      return res.status(400).json({ success: false, message: "Email is required" });
     }
 
-    // 🔥 Generate token
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    let tracker = await AuthSecurityTracker.findOne({ identifier: emailNorm });
+    if (!tracker) {
+      tracker = await AuthSecurityTracker.create({
+        identifier: emailNorm,
+      });
+    }
 
-    // 🔐 Hash token (DB me safe)
+    // Generate token and save hash
+    const resetToken = crypto.randomBytes(32).toString("hex");
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
-    admin.resetPasswordToken = hashedToken;
-    admin.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 min
+    tracker.passwordResetToken = hashedToken;
+    tracker.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    await tracker.save();
 
-    await admin.save();
+    const siteUrl = process.env.SITE_URL || "http://localhost:5174";
+    const resetUrl = `${siteUrl}/admin/reset-password?token=${resetToken}&email=${encodeURIComponent(emailNorm)}`;
 
-    // 🔗 Reset link
-    const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
-
-    res.json({
-      success: true,
-      message: "Reset link generated",
+    sendPasswordResetEmail({
+      toEmail: emailNorm,
       resetUrl,
-    });
+    }).catch((e) => console.error("Failed to send reset email:", e.message));
 
+    // Never return the resetUrl/token in the HTTP response
+    res.json(genericResponse);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 exports.resetPassword = async (req, res) => {

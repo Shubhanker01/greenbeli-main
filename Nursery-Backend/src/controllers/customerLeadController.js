@@ -4,6 +4,12 @@ const User = require("../models/User");
 const Order = require("../models/ordermodels");
 const Lead = require("../models/Lead");
 const asyncHandler = require("../utils/asyncHandler");
+const crypto = require("crypto");
+
+function generateSecurePassword(length = 16) {
+  // Generates cryptographically strong pseudo-random data
+  return crypto.randomBytes(length).toString('hex');
+}
 
 const listUsersForAdmin = asyncHandler(async (_req, res) => {
   const users = await User.find({})
@@ -133,7 +139,7 @@ const createUserForAdmin = asyncHandler(async (req, res) => {
     throw err;
   }
 
-  const passToHash = password || "12345678";
+  const passToHash = generateSecurePassword(16);
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(passToHash, salt);
 

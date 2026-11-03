@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { 
   Star, 
   Heart, 
@@ -17,8 +17,14 @@ import {
   HelpCircle,
   Share2
 } from "lucide-react";
-import { getProductBySlugOrId, getProducts, fetchApi, resolveImageUrl } from "../utils/api";
-// import { useCart } from "../context/CartContext";
+import {
+  getProductBySlugOrId,
+  getProductReviewsApi,
+  getProducts,
+  fetchApi,
+  resolveImageUrl,
+} from "../utils/api";
+import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import PlantCard from "../components/PlantCard";
 import { Reveal, RevealGroup } from "../components/Reveal";
@@ -29,7 +35,8 @@ const SAGE = "#cfe3c8";
 
 export default function SingleProduct() {
   const { id, slug } = useParams();
-  // const { toggleWishlist, isInWishlist } = useCart();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
   const { user } = useAuth();
 
   const productIdOrSlug = slug || id;
@@ -44,9 +51,18 @@ export default function SingleProduct() {
   // Reviews state
   const [activeTab, setActiveTab] = useState("description");
   const [reviews, setReviews] = useState([]);
+  const [reviewName, setReviewName] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSuccess, setReviewSuccess] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState("");
+
+  useEffect(() => {
+    if (user?.name) setReviewName(user.name);
+  }, [user?.name]);
 
   useEffect(() => {
     async function loadProductData() {
@@ -63,7 +79,21 @@ export default function SingleProduct() {
           setSelectedImage("https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=800&q=80");
         }
 
-        setReviews(data?.reviews || []);
+        if (data?._id) {
+          setReviewsLoading(true);
+          setReviewsError("");
+          try {
+            const productReviews = await getProductReviewsApi(data._id);
+            setReviews(productReviews);
+          } catch {
+            setReviews([]);
+            setReviewsError("Unable to load reviews right now. Please try again.");
+          } finally {
+            setReviewsLoading(false);
+          }
+        } else {
+          setReviews([]);
+        }
 
         const all = await getProducts();
         setRelatedProducts(all.filter((p) => p._id !== data?._id).slice(0, 4));
@@ -131,17 +161,25 @@ export default function SingleProduct() {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    setReviewError("");
+    setReviewSuccess("");
+    const reviewer = (reviewName || user?.name || "").trim();
+    if (!reviewer) {
+      setReviewError("Please enter your name to submit a review.");
+      return;
+    }
     setSubmittingReview(true);
     try {
       await fetchApi(`/products/${product._id}/reviews`, {
         method: "POST",
-        body: JSON.stringify({ rating: reviewRating, comment: reviewComment }),
+        body: JSON.stringify({ name: reviewer, rating: reviewRating, comment: reviewComment }),
       });
-      setReviews(prev => [{ reviewerName: user?.name || "Customer", rating: reviewRating, comment: reviewComment, createdAt: new Date() }, ...prev]);
+      const updatedReviews = await getProductReviewsApi(product._id);
+      setReviews(updatedReviews);
+      setReviewSuccess("Thank you! Your review has been added.");
       setReviewComment("");
     } catch {
-      setReviews(prev => [{ reviewerName: user?.name || "Customer", rating: reviewRating, comment: reviewComment, createdAt: new Date() }, ...prev]);
-      setReviewComment("");
+      setReviewError("Unable to submit your review right now. Please try again.");
     } finally {
       setSubmittingReview(false);
     }
@@ -340,18 +378,36 @@ export default function SingleProduct() {
                 </div>
               </div>
 
-              {/* Main Desktop Action: enquiry (no cart / online payment yet) */}
+              {/* Main Desktop Actions: Add to Cart, Buy Now & Botanical Enquiry */}
               <div className="hidden lg:block pt-2 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => addToCart(product, quantity)}
+                    style={{ borderColor: GREEN, color: GREEN }}
+                    className="w-full bg-white border-2 font-bold py-3.5 px-4 rounded-md flex items-center justify-center gap-2 transition hover:bg-emerald-50 touch-active text-sm shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" /> Add to Cart
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addToCart(product, quantity);
+                      navigate("/cart");
+                    }}
+                    style={{ backgroundColor: GREEN }}
+                    className="w-full text-white font-bold py-3.5 px-4 rounded-md shadow-lg shadow-emerald-950/15 flex items-center justify-center gap-2 transition hover:brightness-90 touch-active text-sm"
+                  >
+                    Buy Now
+                  </button>
+                </div>
+
                 <Link
                   to={inquiryUrl}
-                  style={{ backgroundColor: GREEN }}
-                  className="w-full text-white font-semibold py-4 px-6 rounded-md shadow-lg shadow-emerald-950/15 flex items-center justify-center gap-2.5 transition hover:brightness-90 touch-active text-base"
+                  className="w-full text-stone-600 hover:text-[#1f4a34] font-semibold py-2.5 flex items-center justify-center gap-1.5 transition text-xs border border-dashed border-stone-300 rounded-md hover:border-[#1f4a34] bg-white/50"
                 >
-                  <MessageCircle className="w-5 h-5" /> Enquire About This Plant
+                  <MessageCircle className="w-3.5 h-3.5" /> Have questions? Consult our botanists or enquire about bulk rates
                 </Link>
-                <p className="text-xs text-stone-500 text-center">
-                  Share your details and our botanists will confirm availability, pricing and delivery.
-                </p>
               </div>
             </div>
 
@@ -441,6 +497,33 @@ export default function SingleProduct() {
             <div className="space-y-8 max-w-3xl">
               <form onSubmit={handleReviewSubmit} className="p-6 rounded-md bg-white/80 border border-stone-200/80 space-y-4">
                 <h4 className="serif-font text-xl font-bold text-[#1f4a34]">Leave a Review for {product.name}</h4>
+
+                {reviewError && (
+                  <p className="text-xs text-rose-600 bg-rose-50 p-2.5 rounded border border-rose-200">{reviewError}</p>
+                )}
+                {reviewSuccess && (
+                  <p className="text-xs text-emerald-700 bg-emerald-50 p-2.5 rounded border border-emerald-200">{reviewSuccess}</p>
+                )}
+                {!user && (
+                  <p className="text-xs text-stone-600">
+                    <Link to="/login" className="font-bold text-[#1f4a34] underline">Sign in</Link> to submit a review.
+                  </p>
+                )}
+
+                <div>
+                  <label htmlFor="review-name" className="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Your Name</label>
+                  <input
+                    id="review-name"
+                    type="text"
+                    required
+                    maxLength={80}
+                    value={reviewName}
+                    onChange={(e) => setReviewName(e.target.value)}
+                    placeholder="e.g. Ananya Sharma"
+                    className="w-full bg-white border border-stone-300 rounded-md p-2.5 text-xs text-stone-800 focus:outline-none focus:border-[#1f4a34]"
+                  />
+                </div>
+
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Rating</span>
                   <select
@@ -465,14 +548,18 @@ export default function SingleProduct() {
                   type="submit"
                   disabled={submittingReview}
                   style={{ backgroundColor: GREEN }}
-                  className="text-white text-xs font-semibold px-6 py-2.5 rounded-md transition hover:brightness-90"
+                  className="text-white text-xs font-semibold px-6 py-2.5 rounded-md transition hover:brightness-90 disabled:opacity-60"
                 >
                   {submittingReview ? "Submitting..." : "Submit Review"}
                 </button>
               </form>
 
               <div className="space-y-4">
-                {reviews.length === 0 ? (
+                {reviewsLoading ? (
+                  <p role="status" className="text-sm text-stone-500">Loading reviews…</p>
+                ) : reviewsError ? (
+                  <p role="alert" className="text-sm text-rose-600">{reviewsError}</p>
+                ) : reviews.length === 0 ? (
                   <p className="text-sm text-stone-500 italic">No reviews yet. Be the first to share your plant parent experience!</p>
                 ) : (
                   reviews.map((rev, idx) => (
@@ -526,18 +613,31 @@ export default function SingleProduct() {
       </div>
 
       {/* Sticky Mobile Bottom Bar for Easy Ordering (<1024px) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3.5 bg-cream/95 backdrop-blur-md border-t border-stone-200 z-40 shadow-xl flex items-center justify-between gap-3">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-3 bg-cream/95 backdrop-blur-md border-t border-stone-200 z-40 shadow-xl flex items-center justify-between gap-3">
         <div>
-          <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Est. total</span>
-          <p className="text-lg font-bold text-[#1f4a34]">₹{product.price * quantity}</p>
+          <span className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Total</span>
+          <p className="text-base font-bold text-[#1f4a34]">₹{product.price * quantity}</p>
         </div>
-        <Link
-          to={inquiryUrl}
-          style={{ backgroundColor: GREEN }}
-          className="flex-1 max-w-[260px] text-white font-semibold py-3 rounded-md text-sm flex items-center justify-center gap-2 shadow-md touch-active"
-        >
-          <MessageCircle className="w-4 h-4" /> Enquire Now
-        </Link>
+        <div className="flex items-center gap-2 flex-1 max-w-[280px]">
+          <button
+            type="button"
+            onClick={() => addToCart(product, quantity)}
+            className="flex-1 border-2 border-[#1f4a34] text-[#1f4a34] font-bold py-2.5 rounded-md text-xs transition active:bg-emerald-50"
+          >
+            Add to Cart
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              addToCart(product, quantity);
+              navigate("/cart");
+            }}
+            style={{ backgroundColor: GREEN }}
+            className="flex-1 text-white font-bold py-2.5 rounded-md text-xs shadow-md transition hover:brightness-90 active:scale-95"
+          >
+            Buy Now
+          </button>
+        </div>
       </div>
 
     </div>

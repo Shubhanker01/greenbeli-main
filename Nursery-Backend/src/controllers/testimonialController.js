@@ -46,7 +46,7 @@ const setApproval = asyncHandler(async (req, res) => {
   const item = await Testimonial.findByIdAndUpdate(
     id,
     { isApproved: Boolean(isApproved) },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!item) {
     const err = new Error("Testimonial not found");

@@ -13,7 +13,9 @@ import {
   Receipt,
   Users,
   FileText,
-  Star
+  Star,
+  BookOpen,
+  CircleHelp
 } from "lucide-react";
 import { getDashboardStatsApi, updateOrderStatusApi } from "../utils/adminApi";
 
@@ -68,6 +70,36 @@ const KPI_CARDS = [
     icon: Star,
     iconBox: "bg-rose-50 text-rose-700",
     noteColor: "text-rose-600",
+  },
+  {
+    key: "totalOrders",
+    span: "lg:col-span-2",
+    label: "Total Orders",
+    note: "Orders placed",
+    to: "/orders",
+    icon: ShoppingBag,
+    iconBox: "bg-indigo-50 text-indigo-700",
+    noteColor: "text-indigo-600",
+  },
+  {
+    key: "totalJournals",
+    span: "lg:col-span-2",
+    label: "Journals",
+    note: "Articles in the journal",
+    to: "/journals",
+    icon: BookOpen,
+    iconBox: "bg-teal-50 text-teal-700",
+    noteColor: "text-teal-600",
+  },
+  {
+    key: "totalFaqs",
+    span: "lg:col-span-2",
+    label: "FAQs",
+    note: "Frequently asked questions",
+    to: "/faqs",
+    icon: CircleHelp,
+    iconBox: "bg-cyan-50 text-cyan-700",
+    noteColor: "text-cyan-600",
   },
 ];
 

@@ -39,6 +39,22 @@ const settingSchema = new mongoose.Schema(
             required: [true, "address is required"],
             default: DEFAULTS.address
         },
+        shippingFee: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        freeShippingThreshold: {
+            type: Number,
+            default: 999,
+            min: 0,
+        },
+        taxPercent: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100,
+        },
 
         updatedBy: { type: String, default: null }, // id of the admin who last saved
     },
@@ -50,7 +66,7 @@ settingSchema.statics.getStore = function () {
     return this.findOneAndUpdate(
         { key: "store" },
         { $setOnInsert: { key: "store" } },
-        { new: true, upsert: true, setDefaultsOnInsert: true }
+        { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
     );
 };
 
@@ -60,7 +76,7 @@ settingSchema.statics.updateStore = async function (values, updatedBy = null) {
         this.findOneAndUpdate(
             { key: "store" },
             { $set: { ...values, updatedBy } },
-            { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+            { returnDocument: 'after', upsert: true, runValidators: true, setDefaultsOnInsert: true }
         );
 
     try {

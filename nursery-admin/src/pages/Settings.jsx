@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Pencil, Store, Phone, Mail, MapPin } from "lucide-react";
+import { Pencil, Store, Phone, Mail, MapPin, Truck, IndianRupee, Percent } from "lucide-react";
 import StoreSettingsModal from "../components/StoreSettingsModal";
 import { getSettingsApi, updateSettingsApi } from "../utils/adminApi";
 
@@ -8,6 +8,9 @@ const DEFAULT_SETTINGS = {
   supportPhone: "+91 98765 43210",
   supportEmail: "support@greenbeli.in",
   address: "GreenBeli Gardeniya,Khasra No. 74, Rewari Highway Road, near Gyansagar School, Kotkasim, Alampur, Rajasthan 301702",
+  shippingFee: 0,
+  freeShippingThreshold: 999,
+  taxPercent: 0,
 };
 
 export default function Settings() {
@@ -22,7 +25,7 @@ export default function Settings() {
     const fetchSettings = async () => {
       const response = await getSettingsApi();
       if (response.success) {
-        setSettings(response.data);
+        setSettings({ ...DEFAULT_SETTINGS, ...response.data });
       }
       else {
         setError(response.message);
@@ -35,16 +38,16 @@ export default function Settings() {
   const handleSave = async (values) => {
     const response = await updateSettingsApi(values);
     if (response.success) {
-      setSettings(values);
+      setSettings({ ...DEFAULT_SETTINGS, ...response.data });
       setError(null);
+      setSavedSuccess(true);
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setSavedSuccess(false), 2500);
     }
     else {
       setError(response.message);
+      throw new Error(response.message || "Unable to update settings.");
     }
-
-    setSavedSuccess(true);
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setSavedSuccess(false), 2500);
   };
 
   const rows = [
@@ -52,6 +55,9 @@ export default function Settings() {
     { icon: Phone, label: "Helpline Phone", value: settings.supportPhone },
     { icon: Mail, label: "Support Email", value: settings.supportEmail },
     { icon: MapPin, label: "Store Address", value: settings.address },
+    { icon: Truck, label: "Shipping Fee", value: `₹${settings.shippingFee}` },
+    { icon: IndianRupee, label: "Free Shipping Threshold", value: `₹${settings.freeShippingThreshold}` },
+    { icon: Percent, label: "Tax Percent", value: `${settings.taxPercent}%` },
   ];
 
   return (
@@ -90,10 +96,10 @@ export default function Settings() {
         </div>
 
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {rows.map(({ icon: Icon, label, value }) => (
+          {rows.map(({ icon, label, value }) => (
             <div key={label} className={`flex items-start gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100 ${label === "Store Address" ? "sm:col-span-2" : ""}`}>
               <div className="w-10 h-10 shrink-0 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                <Icon className="w-5 h-5" />
+                {React.createElement(icon, { className: "w-5 h-5" })}
               </div>
               <div className="min-w-0">
                 <dt className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{label}</dt>

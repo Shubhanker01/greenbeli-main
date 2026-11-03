@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Product = require("../models/Productsmodel");
 const Category = require("../models/Categories");
 const asyncHandler = require("../utils/asyncHandler");
+const { escapeRegex } = require("../utils/sanitize");
 
 /**
  * Controller to return paginated and searchable products catalog for Admin
@@ -23,7 +24,7 @@ const getPaginatedProducts = asyncHandler(async (req, res) => {
   const filter = {};
 
   if (search && String(search).trim()) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     const searchRegex = { $regex: q, $options: "i" };
 
     // Find category IDs matching search term so searching "Indoor Plants" works

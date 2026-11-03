@@ -24,19 +24,14 @@ export function resolveImageUrl(url) {
   return `${backendOrigin}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
-const getAuthHeaders = () => {
-  const token = getToken();
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
-
 export async function fetchApi(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
   const config = {
-    headers: getAuthHeaders(),
     ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
     credentials: "include",
   };
 
@@ -110,6 +105,14 @@ export async function getProductBySlugOrId(idOrSlug) {
     : `/products/slug/${encodeURIComponent(idOrSlug)}`;
   const data = await fetchApi(endpoint);
   return data?._id ? data : null;
+}
+
+export async function getProductReviewsApi(productId) {
+  const data = await fetchApi(`/products/${encodeURIComponent(productId)}/reviews`);
+  if (!Array.isArray(data.reviews)) {
+    throw new Error("The product reviews response is invalid.");
+  }
+  return data.reviews;
 }
 
 // Categories API Service
@@ -252,6 +255,44 @@ export async function getMyOrdersApi() {
   return await fetchApi("/orders");
 }
 
+export async function requestPasswordResetApi(email) {
+  return await fetchApi("/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function validatePasswordResetTokenApi(token) {
+  return await fetchApi(`/reset-password/validate?token=${encodeURIComponent(token)}`);
+}
+
+export async function changePasswordApi(token, password) {
+  return await fetchApi("/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
+  });
+}
+
 export async function getSystemSettings() {
   return await fetchApi("/settings");
+}
+
+// Content API (Journal & FAQs)
+export async function getJournalArticlesApi() {
+  try {
+    const data = await fetchApi("/content/journal");
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getFaqsApi(category) {
+  try {
+    const query = category ? `?category=${encodeURIComponent(category)}` : "";
+    const data = await fetchApi(`/content/faqs${query}`);
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    return [];
+  }
 }

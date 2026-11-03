@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const multer = require("multer");
-const { authMiddleware, requireAuth } = require("../middleware/authMiddleware");
+const { requireUser, requireAuth } = require("../middleware/authMiddleware");
 const { MAX_IMAGE_BYTES } = require("../utils/supabaseStorage");
-const { standardLimit } = require("../middleware/rateLimit");
+const { standardLimit, reviewSubmitLimit } = require("../middleware/rateLimit");
 
 const {
   productadd,
@@ -30,9 +30,9 @@ router.get("/paginated", getPaginatedProducts);
 router.get("/", listProducts);
 router.get("/slug/:slug", getProductBySlug);
 router.get("/:id", getProduct);
-router.post("/:id/reviews", standardLimit, authMiddleware, addOrUpdateMyReview);
-router.put("/:id/reviews/:reviewId", standardLimit, authMiddleware, updateReview);
-router.get("/:id/reviews", fetchProductReviews);
+router.post("/:id/reviews", reviewSubmitLimit, requireUser, addOrUpdateMyReview);
+router.put("/:id/reviews/:reviewId", reviewSubmitLimit, requireUser, updateReview);
+router.get("/:id/reviews", standardLimit, fetchProductReviews);
 
 // admin write
 router.post('/add', standardLimit, requireAuth, productUpload.array("images", 8), productadd);

@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const { authMiddleware } = require("../middleware/authMiddleware");
+const { requireUser } = require("../middleware/authMiddleware");
 const {
   createOrder,
   getMyOrders,
   getOrderById,
 } = require("../controllers/orderController");
 
-router.use(authMiddleware);
+router.use(requireUser);
 
 router.post("/", createOrder);
 router.get("/", getMyOrders);

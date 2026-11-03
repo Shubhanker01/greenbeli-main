@@ -43,11 +43,17 @@ const listCategories = asyncHandler(async (req, res) => {
     filter.parentCategory = String(parent);
   }
 
-  const items = await Category.find(filter)
+  const queryLimit = req.query?.limit ? Math.min(100, Math.max(1, parseInt(String(req.query.limit), 10) || 50)) : null;
+
+  let query = Category.find(filter)
     .sort({ createdAt: -1 })
-    .populate("parentCategory", "name slug")
-    .limit()
-    .lean();
+    .populate("parentCategory", "name slug");
+
+  if (queryLimit) {
+    query = query.limit(queryLimit);
+  }
+
+  const items = await query.lean();
 
   res.json({ items });
 });

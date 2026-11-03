@@ -21,7 +21,7 @@ services:
     container_name: greenbeli_backend
     restart: always
     ports:
-      - "5008:5008"
+      - "5007:5007"
     env_file:
       - ./Nursery-Backend/.env
     volumes:

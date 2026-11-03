@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Productsmodel");
 const asyncHandler = require("../utils/asyncHandler");
+const { escapeRegex } = require("../utils/sanitize");
 const {
   uploadImages,
   deleteImages,
@@ -367,7 +368,7 @@ const listProducts = asyncHandler(async (req, res) => {
     filter.slug = String(slug).toLowerCase();
   }
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     filter.$or = [
       { name: { $regex: q, $options: "i" } },
       { sku: { $regex: q, $options: "i" } },

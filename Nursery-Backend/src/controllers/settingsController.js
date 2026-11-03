@@ -3,14 +3,24 @@ const asyncHandler = require("../utils/asyncHandler");
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
 
-// Only these three fields can ever be changed through the API (anything else in the body is ignored)
-const FIELDS = ["storeName", "supportPhone", "supportEmail", "address"];
+const FIELDS = [
+    "storeName",
+    "supportPhone",
+    "supportEmail",
+    "address",
+    "shippingFee",
+    "freeShippingThreshold",
+    "taxPercent"
+];
 
 const toResponse = (doc) => ({
     storeName: doc.storeName,
     supportPhone: doc.supportPhone,
     supportEmail: doc.supportEmail,
     address: doc.address,
+    shippingFee: doc.shippingFee ?? 0,
+    freeShippingThreshold: doc.freeShippingThreshold ?? 999,
+    taxPercent: doc.taxPercent ?? 0,
     updatedAt: doc.updatedAt,
 });
 
@@ -21,7 +31,17 @@ function validate(body) {
     const input = body && typeof body === "object" && !Array.isArray(body) ? body : {};
 
     for (const field of FIELDS) {
-        if (input[field] === undefined) continue; // not sent: leave unchanged
+        if (input[field] === undefined) continue;
+
+        if (["shippingFee", "freeShippingThreshold", "taxPercent"].includes(field)) {
+            const num = Number(input[field]);
+            if (!Number.isFinite(num) || num < 0 || (field === "taxPercent" && num > 100)) {
+                errors[field] = "Must be a valid positive number.";
+            } else {
+                values[field] = num;
+            }
+            continue;
+        }
 
         if (typeof input[field] !== "string") {
             errors[field] = "Must be text.";
@@ -65,7 +85,7 @@ const getSettings = asyncHandler(async (_req, res) => {
     res.json({ success: true, data: toResponse(settings) });
 });
 
-// PUT /api/admin/settings   (admin only)
+// PUT /api/settings (admin only)
 const updateSettings = asyncHandler(async (req, res) => {
     const { values, errors } = validate(req.body);
 

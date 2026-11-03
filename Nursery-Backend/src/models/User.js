@@ -66,6 +66,15 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    passwordResetTokenHash: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -75,4 +84,3 @@ const userSchema = new mongoose.Schema(
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;
-

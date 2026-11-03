@@ -6,63 +6,27 @@ import { getMyOrdersApi } from "../utils/api";
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     async function loadOrders() {
       setLoading(true);
+      setLoadError("");
       try {
         const res = await getMyOrdersApi();
         if (Array.isArray(res)) setOrders(res);
-        else if (res?.orders) setOrders(res.orders);
-        else setOrders(getMockOrders());
-      } catch (e) {
-        setOrders(getMockOrders());
+        else if (Array.isArray(res?.items)) setOrders(res.items);
+        else if (Array.isArray(res?.orders)) setOrders(res.orders);
+        else throw new Error("The orders response is invalid.");
+      } catch (error) {
+        setOrders([]);
+        setLoadError(error.message || "Unable to load your orders.");
       } finally {
         setLoading(false);
       }
     }
     loadOrders();
   }, []);
-
-  function getMockOrders() {
-    return [
-      {
-        _id: "ORD-984210",
-        createdAt: "2026-07-25T10:30:00Z",
-        status: "Processing",
-        totalAmount: 1398,
-        paymentMethod: "COD",
-        shippingAddress: {
-          fullName: "Rajat Singh",
-          address: "Sector 62, B-Block",
-          city: "Noida",
-          state: "Uttar Pradesh",
-          pincode: "201301",
-        },
-        items: [
-          { name: "Monstera Deliciosa", quantity: 1, price: 899 },
-          { name: "Golden Snake Plant", quantity: 1, price: 499 },
-        ],
-      },
-      {
-        _id: "ORD-978112",
-        createdAt: "2026-07-18T14:15:00Z",
-        status: "Delivered",
-        totalAmount: 649,
-        paymentMethod: "UPI",
-        shippingAddress: {
-          fullName: "Rajat Singh",
-          address: "Sector 62, B-Block",
-          city: "Noida",
-          state: "Uttar Pradesh",
-          pincode: "201301",
-        },
-        items: [
-          { name: "Handcrafted Ceramic Planter (Sage Green)", quantity: 1, price: 649 },
-        ],
-      },
-    ];
-  }
 
   const getStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
@@ -95,6 +59,10 @@ export default function Orders() {
             <div key={n} className="bg-slate-100 rounded-3xl h-48 animate-pulse" />
           ))}
         </div>
+      ) : loadError ? (
+        <p role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl p-4 text-sm">
+          {loadError}
+        </p>
       ) : orders.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-emerald-100 space-y-4">
           <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
@@ -113,7 +81,11 @@ export default function Orders() {
         </div>
       ) : (
         <div className="space-y-6">
-          {orders.map((order) => (
+          {orders.map((order) => {
+            const status = order.orderStatus || order.status;
+            const orderItems = order.orderItems || order.items || [];
+            const shippingInfo = order.shippingInfo || order.shippingAddress || {};
+            return (
             <div
               key={order._id}
               className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-sm hover:shadow-md transition space-y-6"
@@ -129,12 +101,19 @@ export default function Orders() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getStatusBadge(order.status)}`}>
-                    {order.status || "Processing"}
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${getStatusBadge(status)}`}>
+                    {status || "Processing"}
                   </span>
-                  <span className="serif-font text-lg font-extrabold text-emerald-950">
-                    ₹{order.totalAmount}
-                  </span>
+                  <div className="text-right">
+                    <span className="serif-font text-lg font-extrabold text-emerald-950 block">
+                      ₹{order.totalPrice ?? order.totalAmount}
+                    </span>
+                    {Number(order.discountAmount || 0) > 0 && (
+                      <span className="text-[10px] text-emerald-700 font-bold block">
+                        Saved ₹{order.discountAmount} ({order.couponCode || "Promo"})
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -144,11 +123,11 @@ export default function Orders() {
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Order Confirmed
                 </div>
                 <div className="w-8 sm:w-16 h-0.5 bg-emerald-300" />
-                <div className={`flex items-center gap-2 ${order.status === "Processing" ? "text-emerald-800 font-extrabold" : "text-slate-400"}`}>
+                <div className={`flex items-center gap-2 ${status === "Processing" ? "text-emerald-800 font-extrabold" : "text-slate-400"}`}>
                   <Clock className="w-4 h-4" /> Packing Plants
                 </div>
                 <div className="w-8 sm:w-16 h-0.5 bg-emerald-200" />
-                <div className={`flex items-center gap-2 ${order.status === "Shipped" || order.status === "Delivered" ? "text-emerald-800 font-extrabold" : "text-slate-400"}`}>
+                <div className={`flex items-center gap-2 ${status === "Shipped" || status === "Delivered" ? "text-emerald-800 font-extrabold" : "text-slate-400"}`}>
                   <Truck className="w-4 h-4" /> Eco Delivery
                 </div>
               </div>
@@ -158,7 +137,7 @@ export default function Orders() {
                 <div>
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Items Purchased</h4>
                   <div className="space-y-2">
-                    {order.items?.map((item, idx) => (
+                    {orderItems.map((item, idx) => (
                       <div key={idx} className="flex justify-between items-center text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl">
                         <span className="font-bold flex items-center gap-1.5">
                           <Sprout className="w-3.5 h-3.5 text-emerald-700" /> {item.name} x {item.quantity}
@@ -173,13 +152,14 @@ export default function Orders() {
                   <h4 className="font-bold text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-emerald-700" /> Delivery Address
                   </h4>
-                  <p className="font-bold text-slate-900">{order.shippingAddress?.fullName}</p>
-                  <p className="text-slate-600">{order.shippingAddress?.address}, {order.shippingAddress?.city}</p>
-                  <p className="text-slate-600">{order.shippingAddress?.state} - {order.shippingAddress?.pincode}</p>
+                  {shippingInfo.fullName && <p className="font-bold text-slate-900">{shippingInfo.fullName}</p>}
+                  <p className="text-slate-600">{shippingInfo.address}, {shippingInfo.city}</p>
+                  <p className="text-slate-600">{shippingInfo.state} - {shippingInfo.pincode}</p>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

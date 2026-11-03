@@ -36,10 +36,27 @@ export default function PlantQuiz() {
       setMatchError("");
       try {
         const products = await getProducts();
-        const filtered = products.filter((product) => (
-          !newAnswers.pet || product.petFriendly !== false
-        ));
-        setMatches(filtered.slice(0, 3));
+        const scored = products.map((product) => {
+          let score = 0;
+          if (newAnswers.pet && product.petFriendly !== false) score += 2;
+          if (newAnswers.light) {
+            const lReq = (product.sunlightRequirement || "").toLowerCase();
+            const aLight = newAnswers.light.toLowerCase();
+            if (aLight.includes("low") && (lReq.includes("low") || lReq.includes("indirect") || lReq.includes("shade"))) score += 3;
+            if (aLight.includes("bright") && (lReq.includes("bright") || lReq.includes("direct") || lReq.includes("sun"))) score += 3;
+            if (aLight.includes("moderate") && (lReq.includes("medium") || lReq.includes("indirect") || lReq.includes("moderate"))) score += 3;
+          }
+          if (newAnswers.water) {
+            const wReq = (product.wateringSchedule || "").toLowerCase();
+            const aWater = newAnswers.water.toLowerCase();
+            if (aWater.includes("forgetful") && (wReq.includes("week") || wReq.includes("dry") || wReq.includes("low"))) score += 2;
+            if (aWater.includes("attentive") && (wReq.includes("daily") || wReq.includes("frequent") || wReq.includes("moist"))) score += 2;
+          }
+          return { product, score };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        const topMatches = scored.slice(0, 3).map((item) => item.product);
+        setMatches(topMatches.length > 0 ? topMatches : products.slice(0, 3));
       } catch (error) {
         setMatchError(error.message || "Unable to find plant recommendations. Please try again.");
         setMatches([]);
@@ -215,8 +232,8 @@ export default function PlantQuiz() {
 
                   {matches.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4 text-left sm:grid-cols-3 sm:gap-8">
-                      {matches.map((product) => (
-                        <div key={product._id} className="min-w-0">
+                      {matches.filter(Boolean).map((product, idx) => (
+                        <div key={product._id || product.id || idx} className="min-w-0">
                           <PlantCard product={product} />
                         </div>
                       ))}

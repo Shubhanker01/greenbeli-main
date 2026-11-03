@@ -23,7 +23,12 @@ export default function TestimonialsSection({ onShare }) {
                 const response = await axiosApi.get('/testimonials', {
                     signal: controller.signal
                 });
-                setTestimonials(response.data.items);
+                const items = Array.isArray(response?.data?.items)
+                    ? response.data.items
+                    : Array.isArray(response?.data)
+                    ? response.data
+                    : [];
+                setTestimonials(items);
             } catch (err) {
                 if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
                     console.error("Failed to load testimonials:", err);

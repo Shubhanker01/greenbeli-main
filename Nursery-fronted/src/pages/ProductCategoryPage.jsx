@@ -46,9 +46,7 @@ export default function ProductCategoryPage({ category }) {
             item.slug?.toLowerCase() === normalizedTarget ||
             item.name?.trim().toLowerCase() === normalizedTarget
         );
-        const resolvedCategory = foundCategory || (
-          category?.slug?.toLowerCase() === normalizedTarget ? category : null
-        );
+        const resolvedCategory = foundCategory || null;
 
         if (cancelled) return;
         setCategoryInfo(resolvedCategory);
@@ -99,7 +97,7 @@ export default function ProductCategoryPage({ category }) {
   // `image` is the field the homepage category cards use, so it is checked as well
   const categoryImage = info?.imageUrl || info?.coverImage || info?.image;
   const countLabel = `${products.length} ${products.length === 1 ? "plant" : "plants"}`;
-
+  console.log(products)
   return (
     <div className="min-h-screen overflow-hidden bg-cream pb-20 text-slate-800 sm:pb-28">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12">

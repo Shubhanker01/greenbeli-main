@@ -5,33 +5,43 @@ import {
 
 const SystemSettingContext = createContext(null);
 const defaultValue = {
+    storeName: "Greenbeli",
     supportPhone: "+919950711475",
     supportEmail: "support@greenbeli.in",
-    address: "GreenBeli Gardeniya,Khasra No. 74, Rewari Highway Road, near Gyansagar School, Kotkasim, Alampur, Rajasthan 301702"
+    address: "GreenBeli Gardeniya,Khasra No. 74, Rewari Highway Road, near Gyansagar School, Kotkasim, Alampur, Rajasthan 301702",
+    shippingFee: 0,
+    freeShippingThreshold: 999,
+    taxPercent: 0,
 }
 
 export const SystemSettingProvider = ({ children }) => {
     const [state, setState] = useState({
-        supportPhone: defaultValue.supportPhone,
-        supportEmail: defaultValue.supportEmail,
-        address: defaultValue.address
+        ...defaultValue,
+        status: "loading",
+        error: null,
     });
 
     const refresh = useCallback(async () => {
         setState((current) => ({ ...current, status: "loading", error: null }));
         try {
             const res = await getSystemSettings();
-            if (res.success) {
-                setState({
-                    ...state,
-                    supportPhone: res.data.supportPhone,
-                    supportEmail: res.data.supportEmail,
-                    address: res.data.address
-                })
+            if (!res?.success || !res.data) {
+                throw new Error("Unable to load store settings.");
             }
+            setState((current) => ({
+                ...current,
+                ...defaultValue,
+                ...res.data,
+                status: "success",
+                error: null,
+            }));
         } catch (error) {
-            console.error(error)
-
+            console.error("Unable to load store settings:", error);
+            setState((current) => ({
+                ...current,
+                status: "error",
+                error,
+            }));
         }
     }, []);
 

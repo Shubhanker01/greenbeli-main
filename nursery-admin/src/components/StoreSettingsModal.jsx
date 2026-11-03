@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Save, Store, Phone, Mail, MapPin } from "lucide-react";
+import { X, Save, Store, Phone, Mail, MapPin, Truck, IndianRupee, Percent } from "lucide-react";
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
 
@@ -27,6 +27,15 @@ function validate(values) {
 
     const address = values.address.trim();
     if (!address) errors.address = "Address is required"
+
+    for (const field of ["shippingFee", "freeShippingThreshold", "taxPercent"]) {
+        const value = Number(values[field]);
+        if (values[field] === "" || !Number.isFinite(value) || value < 0) {
+            errors[field] = "Enter a valid non-negative amount.";
+        } else if (field === "taxPercent" && value > 100) {
+            errors[field] = "Tax percent cannot exceed 100.";
+        }
+    }
 
     return errors;
 }
@@ -70,7 +79,10 @@ function ModalContent({ onClose, initialValues, onSave }) {
         values.storeName.trim() === initialValues.storeName &&
         values.supportPhone.trim() === initialValues.supportPhone &&
         values.supportEmail.trim() === initialValues.supportEmail &&
-        values.address.trim() === initialValues.address
+        values.address.trim() === initialValues.address &&
+        Number(values.shippingFee) === Number(initialValues.shippingFee) &&
+        Number(values.freeShippingThreshold) === Number(initialValues.freeShippingThreshold) &&
+        Number(values.taxPercent) === Number(initialValues.taxPercent)
 
     const setField = (field) => (e) => {
         setValues((prev) => ({ ...prev, [field]: e.target.value }));
@@ -95,7 +107,10 @@ function ModalContent({ onClose, initialValues, onSave }) {
                 storeName: values.storeName.trim(),
                 supportPhone: values.supportPhone.trim(),
                 supportEmail: values.supportEmail.trim(),
-                address: values.address.trim()
+                address: values.address.trim(),
+                shippingFee: Number(values.shippingFee),
+                freeShippingThreshold: Number(values.freeShippingThreshold),
+                taxPercent: Number(values.taxPercent),
             });
             onClose();
         } catch (err) {
@@ -110,6 +125,9 @@ function ModalContent({ onClose, initialValues, onSave }) {
         { key: "supportPhone", label: "Helpline Phone", type: "tel", icon: Phone, autoComplete: "tel", maxLength: 20 },
         { key: "supportEmail", label: "Support Email", type: "email", icon: Mail, autoComplete: "email", maxLength: 120 },
         { key: "address", label: "address", type: "text", icon: MapPin, autoComplete: "add", maxLength: 120 },
+        { key: "shippingFee", label: "Shipping Fee (₹)", type: "number", icon: Truck, min: 0, step: "0.01" },
+        { key: "freeShippingThreshold", label: "Free Shipping Threshold (₹)", type: "number", icon: IndianRupee, min: 0, step: "0.01" },
+        { key: "taxPercent", label: "Tax Percent (%)", type: "number", icon: Percent, min: 0, max: 100, step: "0.01" },
     ];
 
     return (
@@ -150,13 +168,13 @@ function ModalContent({ onClose, initialValues, onSave }) {
                         </div>
                     )}
 
-                    {fields.map(({ key, label, type, icon: Icon, ref, autoComplete, maxLength }) => (
+                    {fields.map(({ key, label, type, icon, ref, autoComplete, maxLength, min, max, step }) => (
                         <div key={key}>
                             <label htmlFor={`setting-${key}`} className="block text-sm font-bold text-slate-700 mb-1.5">
                                 {label}
                             </label>
                             <div className="relative">
-                                <Icon className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                {React.createElement(icon, { className: "w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" })}
                                 <input
                                     id={`setting-${key}`}
                                     ref={ref}
@@ -165,6 +183,9 @@ function ModalContent({ onClose, initialValues, onSave }) {
                                     onChange={setField(key)}
                                     autoComplete={autoComplete}
                                     maxLength={maxLength}
+                                    min={min}
+                                    max={max}
+                                    step={step}
                                     aria-invalid={errors[key] ? "true" : undefined}
                                     aria-describedby={errors[key] ? `setting-${key}-error` : undefined}
                                     className={`${INPUT} pl-10 ${errors[key] ? "border-rose-400" : "border-slate-200 focus:border-emerald-600"}`}

@@ -1,4 +1,5 @@
 const Proposal = require('../models/proposals');
+const { escapeRegex } = require('../utils/sanitize');
 
 const createProposal = async (req, res) => {
     try {
@@ -36,8 +37,8 @@ const getAllProposals = async (req, res) => {
     try {
         const { page = 1, limit = 10, search = "" } = req.query;
 
-        const query = search
-            ? { name: { $regex: search, $options: "i" } }
+        const query = search && String(search).trim()
+            ? { name: { $regex: escapeRegex(String(search).trim()), $options: "i" } }
             : {};
 
         const proposals = await Proposal.find(query)
@@ -78,7 +79,7 @@ const updateProposal = async (req, res) => {
         const proposal = await Proposal.findByIdAndUpdate(
             req.params.id,
             req.body,
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         if (!proposal) {

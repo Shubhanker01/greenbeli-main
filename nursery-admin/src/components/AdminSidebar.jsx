@@ -18,7 +18,7 @@ import {
   LuMousePointerClick,
   LuFileText,
 } from "react-icons/lu";
-
+import { ReceiptText, CircleQuestionMark, ShoppingCart } from "lucide-react";
 // Adjust to your backend route for the logout controller
 
 
@@ -36,10 +36,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       { name: "Products", path: "/products", icon: <LuPackage />, superOnly: false },
       { name: "Categories", path: "/categories", icon: <LuLayers />, superOnly: false },
       { name: "Customers", path: "/customers", icon: <LuUsers />, superOnly: false },
+      { name: "Orders", path: "/orders", icon: <ShoppingCart />, superOnly: false },
       { name: "Leads", path: "/leads", icon: <LuMousePointerClick />, superOnly: false },
       { name: "Proposals", path: "/proposals", icon: <LuFileText />, superOnly: false },
       { name: "Sales", path: "/sales", icon: <LuTrendingUp />, superOnly: true },
       { name: "Testimonials", path: "/testimonials", icon: <LuQuote />, superOnly: false },
+      { name: "Journals", path: "/journals", icon: <ReceiptText />, superOnly: false },
+      { name: "Faqs", path: "/faqs", icon: <CircleQuestionMark />, superOnly: false },
       { name: "Settings", path: "/settings", icon: <LuSettings />, superOnly: true },
     ];
     return base.filter((item) => !item.superOnly || isSuperAdmin);

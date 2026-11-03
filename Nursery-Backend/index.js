@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
@@ -20,8 +21,16 @@ const errorHandler = require("./src/middleware/errorMiddleware");
 const mfaRoutes = require("./src/routes/mfaRoutes");
 const customerRoutes = require("./src/routes/customers");
 const settingRoutes = require("./src/routes/settingRoutes");
+const contentRoutes = require("./src/routes/contentRoutes");
 const app = express();
 const port = process.env.PORT || 5007;
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false,
+  })
+);
 
 const envOrigins = process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(',').map(s => s.trim()) : [];
 
@@ -87,25 +96,13 @@ app.use("/api/leads", leadsRoutes);
 app.use("/api/mfa", mfaRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/settings", settingRoutes);
+app.use("/api/content", contentRoutes);
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
 });
 
 app.use(errorHandler);
 
-// async function start() {
-//   await connectDb();
-
-
-// start().catch((err) => {
-//   console.error("Fatal startup error:", err?.message || err);
-//   process.exit(1);
-// });
-
-app.use((req, res) => {
-  console.log("Route hit:", req.originalUrl);
-  res.status(404).json({ message: "Not found" });
-});
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

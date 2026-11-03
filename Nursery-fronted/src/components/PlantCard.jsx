@@ -1,21 +1,28 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, Star, Eye, Check, Sun, Droplets, Plus } from "lucide-react";
-// import { useCart } from "../context/CartContext";
+import { useCart } from "../context/CartContext";
 
 // variant="minimal": Figma style (no card background, round "+" button on the photo).
 // Anything else (default): the original card, so other pages are unchanged.
 export default function PlantCard({ product, variant = "default" }) {
-  // const { addToCart, toggleWishlist, isInWishlist } = useCart();
+  if (!product) return null;
+
+  const cartContext = useCart();
+  const addToCart = cartContext?.addToCart;
+  const toggleWishlist = cartContext?.toggleWishlist;
+  const isInWishlist = cartContext?.isInWishlist;
   const [isAdded, setIsAdded] = useState(false);
 
-  // const isLiked = isInWishlist(product._id);
+  const isLiked = isInWishlist && product._id ? Boolean(isInWishlist(product._id)) : false;
   const imageUrl = product.images?.[0] || product.image || "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=600&q=80";
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // addToCart(product, 1);
+    if (addToCart) {
+      addToCart(product, 1);
+    }
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1800);
   };
@@ -23,7 +30,9 @@ export default function PlantCard({ product, variant = "default" }) {
   const handleWishlistToggle = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    // toggleWishlist(product);
+    if (toggleWishlist) {
+      toggleWishlist(product);
+    }
   };
 
   const discountPercent = product.originalPrice && product.originalPrice > product.price

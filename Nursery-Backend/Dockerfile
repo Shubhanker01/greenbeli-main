@@ -14,11 +14,11 @@ COPY . .
 RUN mkdir -p public/Uploads
 
 # Expose backend port
-EXPOSE 5008
+EXPOSE 5007
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=5008
+ENV PORT=5007
 
 # Start Node backend server
 CMD ["node", "index.js"]

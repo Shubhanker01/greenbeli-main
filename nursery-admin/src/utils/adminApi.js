@@ -140,19 +140,17 @@ export async function updateOrderStatusApi(id, status) {
 }
 
 // Customers Management
-export async function getAdminCustomersApi() {
+export async function getAdminCustomersApi(page = 1, limit = 10) {
   try {
-    return await adminFetch("/admin/users");
-  } catch {
-    return [
-      { _id: "usr-1", name: "Ananya Sharma", email: "ananya@example.com", phone: "+91 98765 43210", role: "customer", createdAt: "2026-06-12" },
-      { _id: "usr-2", name: "Vikram Malhotra", email: "vikram@example.com", phone: "+91 98765 43211", role: "customer", createdAt: "2026-05-19" },
-    ];
+    return await adminFetch(`/customers?page=${page}&limit=${limit}`);
+  } catch (err) {
+    console.error("Failed to fetch customers:", err);
+    return { data: [], total: 0, totalPages: 1 };
   }
 }
 
 export async function createCustomerApi(userData) {
-  return await adminFetch("/admin/users", {
+  return await adminFetch("/customers", {
     method: "POST",
     body: JSON.stringify(userData),
   });
@@ -203,12 +201,11 @@ export async function deleteProposalApi(id) {
 // Testimonials Management
 export async function getAdminTestimonialsApi() {
   try {
-    return await adminFetch("/testimonials/admin");
-  } catch {
-    return [
-      { _id: "t-1", name: "Ananya Sharma", role: "Interior Designer", comment: "Outstanding plant quality!", rating: 5, isApproved: true },
-      { _id: "t-2", name: "Kunal Kapoor", role: "Architect", comment: "Great packaging and fast shipping.", rating: 4, isApproved: false },
-    ];
+    const data = await adminFetch("/testimonials/admin");
+    return { items: Array.isArray(data?.items) ? data.items : [] };
+  } catch (err) {
+    console.error("Failed to fetch admin testimonials:", err);
+    return { items: [] };
   }
 }
 

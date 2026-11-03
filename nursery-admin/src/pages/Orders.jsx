@@ -85,7 +85,7 @@ export default function Orders() {
                   <tr key={order._id} className="hover:bg-slate-50/80 transition">
                     <td className="py-3.5 px-4 font-bold text-slate-900">#{order._id}</td>
                     <td className="py-3.5 px-4 text-slate-700 font-medium">
-                      {order.customerName || order.shippingAddress?.fullName || "Verified Buyer"}
+                      {order.user?.name || order.user?.firstName || order.customerName || order.shippingAddress?.fullName || "Verified Buyer"}
                     </td>
                     <td className="py-3.5 px-4 text-slate-500">
                       {order.createdAt
@@ -93,7 +93,7 @@ export default function Orders() {
                         : "2026-07-26"}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-600">{order.paymentMethod || "COD"}</td>
-                    <td className="py-3.5 px-4 font-extrabold text-emerald-950">₹{order.totalAmount}</td>
+                    <td className="py-3.5 px-4 font-extrabold text-emerald-950">₹{order.totalPrice ?? order.totalAmount}</td>
                     <td className="py-3.5 px-4">
                       <select
                         value={order.status || "Processing"}
@@ -106,7 +106,6 @@ export default function Orders() {
                             : "bg-amber-100 text-amber-800 border-amber-300"
                         }`}
                       >
-                        <option value="Pending">Pending</option>
                         <option value="Processing">Processing</option>
                         <option value="Shipped">Shipped</option>
                         <option value="Delivered">Delivered</option>
@@ -161,7 +160,7 @@ export default function Orders() {
               <div>
                 <h4 className="font-bold text-slate-800 uppercase tracking-wider mb-2">Order Items</h4>
                 <div className="space-y-2">
-                  {selectedOrder.items?.map((item, i) => (
+                  {(selectedOrder.orderItems || selectedOrder.items || []).map((item, i) => (
                     <div key={i} className="flex justify-between items-center bg-emerald-50/50 p-2.5 rounded-xl">
                       <span className="font-bold text-slate-900">{item.name} x {item.quantity}</span>
                       <span className="font-extrabold text-emerald-950">₹{item.price * item.quantity}</span>
@@ -170,9 +169,17 @@ export default function Orders() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center border-t border-slate-100 pt-3 text-sm font-extrabold text-slate-900">
-                <span>Grand Total Paid ({selectedOrder.paymentMethod || "COD"})</span>
-                <span className="text-emerald-800">₹{selectedOrder.totalAmount}</span>
+              <div className="border-t border-slate-100 pt-3 space-y-1 text-xs">
+                {Number(selectedOrder.discountAmount || 0) > 0 && (
+                  <div className="flex justify-between items-center text-emerald-700 font-bold">
+                    <span>Discount ({selectedOrder.couponCode || "Promo"})</span>
+                    <span>-₹{selectedOrder.discountAmount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-sm font-extrabold text-slate-900 pt-1">
+                  <span>Grand Total Paid ({selectedOrder.paymentMethod || "COD"})</span>
+                  <span className="text-emerald-800">₹{selectedOrder.totalPrice ?? selectedOrder.totalAmount}</span>
+                </div>
               </div>
             </div>
 

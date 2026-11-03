@@ -16,12 +16,23 @@ import {
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useSystemSettings } from "../context/SystemSettingsContext";
 import { createOrderApi } from "../utils/api";
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { cartItems, updateQuantity, removeFromCart, clearCart, subtotal } = useCart();
+  const {
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    subtotal,
+    cartSyncing,
+    cartSyncError,
+    retryCartSync,
+  } = useCart();
   const { user } = useAuth();
+  const { state: storeSettings } = useSystemSettings();
 
   const [couponCode, setCouponCode] = useState("");
   const [discountPercent, setDiscountPercent] = useState(0);
@@ -41,6 +52,7 @@ export default function Cart() {
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderPlacedSuccess, setOrderPlacedSuccess] = useState(null);
+  const [checkoutError, setCheckoutError] = useState("");
 
   const handleApplyCoupon = (e) => {
     e.preventDefault();
@@ -53,14 +65,18 @@ export default function Cart() {
     }
   };
 
-  const shippingFee = subtotal > 499 ? 0 : 79;
+  const shippingFee = subtotal >= storeSettings.freeShippingThreshold
+    ? 0
+    : storeSettings.shippingFee;
+  const taxAmount = Math.round((subtotal * storeSettings.taxPercent) / 100);
   const discountAmount = Math.round((subtotal * discountPercent) / 100);
-  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee);
+  const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + taxAmount);
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
     if (cartItems.length === 0) return;
     setPlacingOrder(true);
+    setCheckoutError("");
 
     const orderPayload = {
       items: cartItems.map((item) => ({
@@ -74,6 +90,7 @@ export default function Cart() {
       totalAmount: grandTotal,
       subtotal,
       discountAmount,
+      couponCode: couponApplied ? couponCode.trim().toUpperCase() : "",
       shippingFee,
     };
 
@@ -84,11 +101,12 @@ export default function Cart() {
       setOrderPlacedSuccess(orderId);
       clearCart();
     } catch (err) {
-      // Resilient fallback order placement
       setPlacingOrder(false);
-      const orderId = `GB-${Math.floor(100000 + Math.random() * 900000)}`;
-      setOrderPlacedSuccess(orderId);
-      clearCart();
+      setCheckoutError(
+        err.status === 401 || err.status === 403
+          ? "You must be logged in to place your order."
+          : "Unable to place your order. Please try again."
+      );
     }
   };
 
@@ -148,6 +166,20 @@ export default function Cart() {
       <h1 className="serif-font text-3xl font-bold text-slate-900 mb-8 flex items-center gap-2">
         <ShoppingBag className="w-7 h-7 text-emerald-800" /> Checkout & Shopping Bag
       </h1>
+
+      {cartSyncing && (
+        <p role="status" className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+          Syncing your cart…
+        </p>
+      )}
+      {cartSyncError && (
+        <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+          <span>{cartSyncError} Retry syncing before placing your order.</span>
+          <button type="button" onClick={retryCartSync} className="font-bold underline">
+            Retry sync
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         
@@ -408,10 +440,15 @@ export default function Cart() {
               )}
 
               <div className="flex justify-between">
-                <span>Eco Shipping</span>
+                <span>Eco Shipping (free on ₹{storeSettings.freeShippingThreshold}+ orders)</span>
                 <span className="font-bold text-emerald-700">
-                  {shippingFee === 0 ? "FREE (Orders > ₹499)" : `₹${shippingFee}`}
+                  {shippingFee === 0 ? "FREE" : `₹${shippingFee}`}
                 </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span>Tax ({storeSettings.taxPercent}%)</span>
+                <span className="font-bold text-slate-900">₹{taxAmount}</span>
               </div>
 
               <div className="flex justify-between text-base font-extrabold text-emerald-950 pt-3 border-t border-slate-200">
@@ -420,10 +457,21 @@ export default function Cart() {
               </div>
             </div>
 
+            {checkoutError && (
+              <p role="alert" className="text-xs text-rose-600">
+                {checkoutError}{" "}
+                {checkoutError.includes("logged in") && (
+                  <Link to="/login" className="font-bold underline">
+                    Log in
+                  </Link>
+                )}
+              </p>
+            )}
+
             <button
               type="submit"
               form="checkout-form"
-              disabled={placingOrder}
+              disabled={placingOrder || cartSyncing || Boolean(cartSyncError)}
               className="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold py-4 rounded-2xl text-xs shadow-xl shadow-emerald-900/20 transition flex items-center justify-center gap-2"
             >
               {placingOrder ? "Processing Order..." : "Confirm & Place Order"} <ArrowRight className="w-4 h-4" />

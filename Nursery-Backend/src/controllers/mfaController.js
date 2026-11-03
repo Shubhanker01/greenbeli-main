@@ -228,7 +228,7 @@ const mfaResetRequest = async (req, res) => {
         tracker.mfaResetOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
         await tracker.save();
 
-        console.warn(`[SECURITY ALERT] MFA Reset OTP generated for ${user.email}: ${otpCode}`);
+        console.warn(`[SECURITY ALERT] MFA Reset OTP generated for ${user.email}. Dispatched to email.`);
 
         // Dispatch via Resend to user's registered admin email
         const emailRes = await sendEmergencyOtpEmail({
