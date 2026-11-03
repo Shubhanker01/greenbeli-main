@@ -33,3 +33,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# discarding plan.md
+PLAN.md
