@@ -126,6 +126,32 @@ export async function deleteCategoryApi(id) {
   });
 }
 
+// Plant care guides management
+export async function getPlantCareGuidesApi() {
+  const data = await adminFetch("/plant-care-guides");
+  return Array.isArray(data.items) ? data.items : [];
+}
+
+export async function createPlantCareGuideApi(guideData) {
+  return adminFetch("/plant-care-guides", {
+    method: "POST",
+    body: JSON.stringify(guideData),
+  });
+}
+
+export async function updatePlantCareGuideApi(id, guideData) {
+  return adminFetch(`/plant-care-guides/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(guideData),
+  });
+}
+
+export async function deletePlantCareGuideApi(id) {
+  return adminFetch(`/plant-care-guides/${id}`, {
+    method: "DELETE",
+  });
+}
+
 // Orders Management
 export async function getAdminOrdersApi() {
   const data = await adminFetch("/admin/orders");

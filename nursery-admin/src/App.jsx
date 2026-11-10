@@ -29,6 +29,7 @@ const ResetMfa = lazy(() => import("./pages/ResetMfa"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Journals = lazy(() => import("./pages/Journal"));
 const Faqs = lazy(() => import("./pages/Faqs"));
+const PlantGuides = lazy(() => import("./pages/PlantGuides"));
 
 const PageLoader = () => (
   <div className="min-h-[50vh] flex items-center justify-center">
@@ -90,6 +91,7 @@ export default function App() {
               <Route path="settings" element={<Settings />} />
               <Route path="journals" element={<Journals/>}></Route>
               <Route path="faqs" element={<Faqs />} />
+              <Route path="plant-guides" element={<PlantGuides />} />
               <Route path="*" element={<Dashboard />} />
             </Route>
           </Route>

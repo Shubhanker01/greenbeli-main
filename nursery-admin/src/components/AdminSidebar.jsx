@@ -18,7 +18,7 @@ import {
   LuMousePointerClick,
   LuFileText,
 } from "react-icons/lu";
-import { ReceiptText, CircleQuestionMark, ShoppingCart } from "lucide-react";
+import { ReceiptText, CircleQuestionMark, ShoppingCart, Sprout } from "lucide-react";
 // Adjust to your backend route for the logout controller
 
 
@@ -43,6 +43,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       { name: "Testimonials", path: "/testimonials", icon: <LuQuote />, superOnly: false },
       { name: "Journals", path: "/journals", icon: <ReceiptText />, superOnly: false },
       { name: "Faqs", path: "/faqs", icon: <CircleQuestionMark />, superOnly: false },
+      { name: "Plant Guides", path: "/plant-guides", icon: <Sprout />, superOnly: false },
       { name: "Settings", path: "/settings", icon: <LuSettings />, superOnly: true },
     ];
     return base.filter((item) => !item.superOnly || isSuperAdmin);

@@ -14,82 +14,15 @@ import { getFaqsApi } from "../utils/api";
 const GREEN = "#1f4a34";
 const SAGE = "#cfe3c8";
 
-const DEFAULT_FAQ_SECTIONS = [
-  {
-    id: "plants",
-    icon: Leaf,
-    title: "Plants & plant care",
-    questions: [
-      {
-        question: "How do I choose the right plant for my home?",
-        answer:
-          "Consider how much natural light your space gets, how much time you can give to care, and where you plan to place the plant. Check each product page for plant details, and contact our team if you would like help choosing.",
-      },
-      {
-        question: "How should I care for a new plant when it arrives?",
-        answer:
-          "Unpack it gently and give it a little time to settle into its new surroundings. Check the soil before watering, choose a spot that suits its light needs, and avoid making several big changes at once.",
-      },
-      {
-        question: "Where can I find plant-care advice?",
-        answer:
-          "Visit our Plant Care Guides for helpful starting points on watering, light, soil, and everyday plant care. Each plant can have different needs, so also check the care details on its product page.",
-        link: { to: "/plant-care-guides", label: "Explore plant care guides" },
-      },
-    ],
-  },
-  {
-    id: "orders",
-    icon: PackageCheck,
-    title: "Orders & delivery",
-    questions: [
-      {
-        question: "How are plants prepared for delivery?",
-        answer:
-          "We prepare plants thoughtfully and package them securely in breathable, protective cartons with root moisture retainers to keep foliage safe in transit.",
-      },
-      {
-        question: "What if my plant arrives in poor condition?",
-        answer:
-          "Please reach out within 48 hours of delivery with photos of the plant and packaging so we can assess how to help with replacement support.",
-        link: { to: "/contact", label: "Contact our team" },
-      },
-      {
-        question: "Can I track my delivery?",
-        answer:
-          "Yes, we provide dispatch details and delivery updates so you can follow your order on its way.",
-      },
-    ],
-  },
-  {
-    id: "support",
-    icon: Sprout,
-    title: "Care & support",
-    questions: [
-      {
-        question: "Can I ask questions after my plant arrives?",
-        answer:
-          "Yes. Our horticulture team is always happy to answer care questions and guide you as your plant settles in.",
-        link: { to: "/contact", label: "Ask a plant question" },
-      },
-      {
-        question: "Are your plants grown sustainably?",
-        answer:
-          "We care about healthy, responsible growing practices that give plants the time, soil, and attention they need to thrive naturally.",
-      },
-    ],
-  },
-];
-
 export default function FAQs() {
-  const [sections, setSections] = useState(DEFAULT_FAQ_SECTIONS);
-
+  const [sections, setSections] = useState([]);
+  const [error, setError] = useState(null);
   useEffect(() => {
     let cancelled = false;
     async function loadFaqs() {
       try {
         const items = await getFaqsApi();
-        console.log(items);
+
         if (!cancelled && Array.isArray(items) && items.length > 0) {
           // Group DB FAQs by category
           const grouped = {};
@@ -105,10 +38,10 @@ export default function FAQs() {
             questions,
           }));
           setSections(dynamicSections);
-          console.log(dynamicSections)
         }
       } catch (e) {
         console.log(e)
+        setError("Some Error occured while loading FAQs.")
         // Fall back to default sections
       }
     }
@@ -117,6 +50,14 @@ export default function FAQs() {
       cancelled = true;
     };
   }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream text-slate-800">
+        <p className="text-lg font-semibold text-red-600">{error}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen overflow-hidden bg-cream pb-20 text-slate-800 sm:pb-28">

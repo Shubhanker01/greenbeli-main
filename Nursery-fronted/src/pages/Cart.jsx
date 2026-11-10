@@ -10,9 +10,6 @@ import {
   ArrowRight, 
   CheckCircle, 
   Tag, 
-  CreditCard,
-  Building,
-  Check
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -49,7 +46,6 @@ export default function Cart() {
     pincode: "",
   });
 
-  const [paymentMethod, setPaymentMethod] = useState("COD");
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderPlacedSuccess, setOrderPlacedSuccess] = useState(null);
   const [checkoutError, setCheckoutError] = useState("");
@@ -86,7 +82,6 @@ export default function Cart() {
         price: item.price,
       })),
       shippingAddress: shippingDetails,
-      paymentMethod,
       totalAmount: grandTotal,
       subtotal,
       discountAmount,
@@ -328,61 +323,7 @@ export default function Cart() {
           </form>
 
           {/* Payment Method Selector */}
-          <div className="bg-white rounded-3xl p-6 border border-emerald-100 shadow-sm space-y-4">
-            <h2 className="serif-font font-bold text-lg text-slate-900 border-b border-slate-100 pb-3">
-              3. Payment Method
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("COD")}
-                className={`p-4 rounded-2xl border text-left transition flex items-center justify-between ${
-                  paymentMethod === "COD"
-                    ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 font-bold"
-                    : "border-slate-200 text-slate-700 hover:border-emerald-300"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Building className="w-5 h-5 text-emerald-700" />
-                  <span className="text-xs">Cash on Delivery</span>
-                </div>
-                {paymentMethod === "COD" && <Check className="w-4 h-4 text-emerald-700" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("UPI")}
-                className={`p-4 rounded-2xl border text-left transition flex items-center justify-between ${
-                  paymentMethod === "UPI"
-                    ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 font-bold"
-                    : "border-slate-200 text-slate-700 hover:border-emerald-300"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-emerald-700" />
-                  <span className="text-xs">UPI / GPay / QR</span>
-                </div>
-                {paymentMethod === "UPI" && <Check className="w-4 h-4 text-emerald-700" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod("CARD")}
-                className={`p-4 rounded-2xl border text-left transition flex items-center justify-between ${
-                  paymentMethod === "CARD"
-                    ? "border-emerald-600 bg-emerald-50/60 text-emerald-950 font-bold"
-                    : "border-slate-200 text-slate-700 hover:border-emerald-300"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-emerald-700" />
-                  <span className="text-xs">Credit/Debit Card</span>
-                </div>
-                {paymentMethod === "CARD" && <Check className="w-4 h-4 text-emerald-700" />}
-              </button>
-            </div>
-          </div>
+          
 
         </div>
 

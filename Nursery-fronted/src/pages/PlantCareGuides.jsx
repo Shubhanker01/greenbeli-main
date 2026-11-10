@@ -1,53 +1,44 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
-  Droplets,
   Leaf,
-  Scissors,
-  Sprout,
-  Sun,
 } from "lucide-react";
 import { Reveal, RevealGroup } from "../components/Reveal";
+import { getPlantCareGuidesApi } from "../utils/api";
 
 const GREEN = "#1f4a34";
 const SAGE = "#cfe3c8";
 
-const CARE_GUIDES = [
-  {
-    id: "watering",
-    icon: Droplets,
-    title: "Water with intention",
-    description:
-      "Check the soil before you water. If the top layer is still moist, give it more time. When it feels dry, water slowly until excess drains away, then empty the saucer.",
-    tip: "A consistent check is more reliable than watering by the calendar.",
-  },
-  {
-    id: "light",
-    icon: Sun,
-    title: "Find the right light",
-    description:
-      "Notice how sunlight moves through your space. Bright indirect light suits many houseplants; direct sun can be helpful for some plants but too strong for others.",
-    tip: "If leaves fade, scorch, or stretch, try adjusting the plant's position gradually.",
-  },
-  {
-    id: "soil",
-    icon: Sprout,
-    title: "Give roots room to breathe",
-    description:
-      "Choose a pot with drainage and a growing mix suited to your plant. Airy soil helps excess water escape and gives roots space to grow.",
-    tip: "Avoid moving a plant into a much larger pot; extra soil can stay wet for too long.",
-  },
-  {
-    id: "grooming",
-    icon: Scissors,
-    title: "Keep leaves looking their best",
-    description:
-      "Remove dead or yellowing leaves with clean scissors, and gently dust broad leaves so they can make the most of the light.",
-    tip: "Check stems and the undersides of leaves when you water to spot changes early.",
-  },
-];
-
 export default function PlantCareGuides() {
+  const [guides, setGuides] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadGuides = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        setGuides(await getPlantCareGuidesApi(controller.signal));
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setError(err.message || "Unable to load plant care guides. Please try again.");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadGuides();
+    return () => controller.abort();
+  }, [reloadKey]);
+
   return (
     <div className="min-h-screen overflow-hidden bg-cream pb-20 text-slate-800 sm:pb-28">
       <section className="relative overflow-hidden">
@@ -152,34 +143,54 @@ export default function PlantCareGuides() {
           delay={0.05}
           className="grid grid-cols-1 gap-y-10 sm:grid-cols-2 sm:gap-x-10 sm:gap-y-12"
         >
-          {CARE_GUIDES.map(({ id, icon: Icon, title, description, tip }) => (
-            <Reveal
-              key={id}
-              id={id}
-              className="border-t border-stone-300/80 pt-7 sm:pt-8"
-            >
-              <div className="mb-5 flex items-center gap-4">
-                <span
-                  style={{ color: GREEN, backgroundColor: `${SAGE}80` }}
-                  className="flex h-12 w-12 items-center justify-center rounded-full"
-                >
-                  <Icon className="h-5 w-5" strokeWidth={1.7} />
-                </span>
-                <h3
-                  style={{ color: GREEN }}
-                  className="serif-font text-xl font-bold sm:text-2xl"
-                >
-                  {title}
-                </h3>
-              </div>
-              <p className="text-base leading-relaxed text-stone-600">
-                {description}
-              </p>
-              <p className="mt-4 border-l-2 border-emerald-700/40 pl-4 text-sm leading-relaxed text-stone-500">
-                {tip}
-              </p>
-            </Reveal>
-          ))}
+          {loading ? (
+            <p role="status" className="col-span-full py-10 text-center text-stone-500">
+              Loading plant care guides...
+            </p>
+          ) : error ? (
+            <div role="alert" className="col-span-full rounded-lg border border-red-200 bg-red-50 p-5 text-center text-sm text-red-700">
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={() => setReloadKey((key) => key + 1)}
+                className="mt-3 font-semibold underline underline-offset-2"
+              >
+                Try again
+              </button>
+            </div>
+          ) : guides.length === 0 ? (
+            <p className="col-span-full py-10 text-center text-stone-500">
+              Plant care guides are not available right now.
+            </p>
+          ) : (
+            guides.map(({ _id, title, description, tip }) => (
+              <Reveal
+                key={_id}
+                className="border-t border-stone-300/80 pt-7 sm:pt-8"
+              >
+                <div className="mb-5 flex items-center gap-4">
+                  <span
+                    style={{ color: GREEN, backgroundColor: `${SAGE}80` }}
+                    className="flex h-12 w-12 items-center justify-center rounded-full"
+                  >
+                    <Leaf className="h-5 w-5" strokeWidth={1.7} />
+                  </span>
+                  <h3
+                    style={{ color: GREEN }}
+                    className="serif-font text-xl font-bold sm:text-2xl"
+                  >
+                    {title}
+                  </h3>
+                </div>
+                <p className="text-base leading-relaxed text-stone-600">
+                  {description}
+                </p>
+                <p className="mt-4 border-l-2 border-emerald-700/40 pl-4 text-sm leading-relaxed text-stone-500">
+                  {tip}
+                </p>
+              </Reveal>
+            ))
+          )}
         </RevealGroup>
       </section>
 

@@ -7,39 +7,9 @@ import { getJournalArticlesApi } from "../utils/api";
 const GREEN = "#1f4a34";
 const SAGE = "#cfe3c8";
 
-const DEFAULT_NOTES = [
-  {
-    category: "Plant care",
-    title: "A gentler way to water",
-    description:
-      "Good watering starts with noticing. Check the soil before reaching for your watering can, and let each plant tell you when it is ready.",
-    image:
-      "https://images.unsplash.com/photo-1497250681960-ef046c08a56e?q=80&w=1000&auto=format&fit=crop",
-    imageAlt: "Water droplets on the leaves of a green houseplant",
-  },
-  {
-    category: "Light & living",
-    title: "Find the light your plant loves",
-    description:
-      "A bright room can have many different light levels. Notice where the sun falls through the day to find a comfortable spot for your plant.",
-    image:
-      "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?q=80&w=1000&auto=format&fit=crop",
-    imageAlt: "Houseplants growing in a softly lit home",
-  },
-  {
-    category: "Growing well",
-    title: "Make room for new growth",
-    description:
-      "New leaves are a lovely sign of progress. Give them space, keep their care consistent, and enjoy the small changes along the way.",
-    image:
-      "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1000&auto=format&fit=crop",
-    imageAlt: "Fresh green foliage growing toward the light",
-  },
-];
-
 export default function OurJournal() {
-  const [articles, setArticles] = useState(DEFAULT_NOTES);
-
+  const [articles, setArticles] = useState([]);
+  const [error, setError] = useState(null);
   useEffect(() => {
     let cancelled = false;
     async function fetchJournal() {
@@ -49,6 +19,7 @@ export default function OurJournal() {
           setArticles(data);
         }
       } catch (e) {
+        setError("Some Error occured while loading journal articles.")
         // Fall back to default articles
       }
     }
@@ -57,6 +28,14 @@ export default function OurJournal() {
       cancelled = true;
     };
   }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream text-slate-800">
+        <p className="text-lg font-semibold text-red-600">{error}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen overflow-hidden bg-cream pb-20 text-slate-800 sm:pb-28">

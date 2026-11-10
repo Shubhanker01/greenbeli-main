@@ -1,49 +1,13 @@
-const { Resend } = require("resend");
 require('dotenv').config();
-
-const fromEmail = process.env.RESEND_FROM_EMAIL;
-const { transporter } = require("../config/transporter")
-const resendApiKey = process.env.RESEND_API_KEY;
-
-const resend = new Resend(resendApiKey);
+const { transporter, fromEmail, isEmailConfigured } = require("../config/transporter")
 const esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// async function sendPasswordResetEmail({ toEmail, resetUrl }) {
-//     if (!resend) return { success: false, error: 'Resend not configured' };
 
-//     try {
-//         const { data, error } = await resend.emails.send({
-//             from: `Greenbeli Security <${fromEmail}>`,
-//             to: [toEmail || ADMIN_EMAIL],
-//             subject: '🔒 Emergency Admin Password Reset Request',
-//             html: `
-//                 <div style="font-family: sans-serif; max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px;">
-//                     <h2 style="color: #0f172a; margin-top: 0;">Emergency Password Reset</h2>
-//                     <p style="color: #475569; font-size: 14px; line-height: 1.5;">
-//                         We received a request to reset the administrator password for <strong>${toEmail}</strong>.
-//                     </p>
-//                     <p style="color: #475569; font-size: 14px; line-height: 1.5;">
-//                         Click the button below to set a new password. This link is cryptographically protected and will expire in <strong>15 minutes</strong>:
-//                     </p>
-//                     <div style="text-align: center; margin: 28px 0;">
-//                         <a href="${resetUrl}" style="background: #facc15; color: #0f172a; font-weight: 700; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px;">
-//                             Reset Password & Unlock Account
-//                         </a>
-//                     </div>
-//                     <p style="color: #94a3b8; font-size: 12px; line-height: 1.4;">
-//                         If you did not request this, please ignore this email. Your password will remain unchanged.
-//                     </p>
-//                 </div>
-//             `,
-//         });
-//         return { success: !error, data, error };
-//     } catch (err) {
-//         return { success: false, error: err.message };
-//     }
-// }
 
 async function sendPasswordResetEmail({ toEmail, resetUrl }) {
+    if (!isEmailConfigured) throw new Error("Brevo SMTP is not configured");
+
     try {
         const info = await transporter.sendMail({
             from: fromEmail, // sender address
@@ -75,11 +39,12 @@ async function sendPasswordResetEmail({ toEmail, resetUrl }) {
 
     } catch (err) {
         console.error("Error while sending mail:", err);
+        throw err;
     }
 }
 
 async function sendCustomerPasswordResetEmail({ toEmail, resetUrl }) {
-    if (!transporter) return { success: false, error: "Transporter not configured" };
+    if (!isEmailConfigured) return { success: false, error: "Brevo SMTP is not configured" };
 
     try {
         await transporter.sendMail({
@@ -105,12 +70,12 @@ async function sendCustomerPasswordResetEmail({ toEmail, resetUrl }) {
 }
 
 async function sendEmergencyOtpEmail({ toEmail, otp }) {
-    if (!transporter) return { success: false, error: 'Transporter not configured' };
+    if (!isEmailConfigured) return { success: false, error: "Brevo SMTP is not configured" };
 
     try {
         const info = await transporter.sendMail({
             from: fromEmail,
-            to: [toEmail || ADMIN_EMAIL],
+            to: toEmail,
             subject: 'Your Emergency MFA Reset Verification Code',
             html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
@@ -150,7 +115,7 @@ async function sendEmergencyOtpEmail({ toEmail, otp }) {
 }
 
 async function sendEmailConfirmation({ toEmail, confirmationUrl, name = "there", minutes = 15 }) {
-    if (!transporter) return { success: false, error: "Transporter not configured" };
+    if (!isEmailConfigured) return { success: false, error: "Brevo SMTP is not configured" };
 
     const safeUrl = esc(confirmationUrl);
     try {
@@ -188,7 +153,7 @@ async function sendEmailConfirmation({ toEmail, confirmationUrl, name = "there",
 }
 
 async function sendOrderConfirmationEmail({ toEmail, customerName = "there", order }) {
-    if (!transporter) return { success: false, error: "Transporter not configured" };
+    if (!isEmailConfigured) return { success: false, error: "Brevo SMTP is not configured" };
 
     const displayName = customerName || "there";
     const safeName = esc(displayName);

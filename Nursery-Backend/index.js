@@ -22,6 +22,7 @@ const mfaRoutes = require("./src/routes/mfaRoutes");
 const customerRoutes = require("./src/routes/customers");
 const settingRoutes = require("./src/routes/settingRoutes");
 const contentRoutes = require("./src/routes/contentRoutes");
+const plantCareRoutes = require("./src/routes/plantCareRoutes");
 const app = express();
 const port = process.env.PORT || 5007;
 
@@ -97,6 +98,7 @@ app.use("/api/mfa", mfaRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/settings", settingRoutes);
 app.use("/api/content", contentRoutes);
+app.use("/api/plant-care-guides", plantCareRoutes);
 app.use((_req, res) => {
   res.status(404).json({ message: "Not found" });
 });

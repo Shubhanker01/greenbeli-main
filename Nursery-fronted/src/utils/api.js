@@ -124,6 +124,14 @@ export async function getCategories() {
   return data.items;
 }
 
+export async function getPlantCareGuidesApi(signal) {
+  const data = await fetchApi("/plant-care-guides", { signal });
+  if (!Array.isArray(data?.items)) {
+    throw new Error("The plant care guides response is invalid.");
+  }
+  return data.items;
+}
+
 // Testimonials API Service
 export async function getTestimonials() {
   const data = await fetchApi("/testimonials");
