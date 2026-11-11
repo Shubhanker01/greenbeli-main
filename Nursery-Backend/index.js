@@ -58,7 +58,7 @@ const allowedOrigins = Array.from(new Set([
 const corsMiddleware = cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.greenbeli.in') || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || origin.endsWith('.greenbeli.vercel.app')) {
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.greenbeli.in') || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || origin.endsWith('greenbeli.vercel.app')) {
       return callback(null, true);
     }
     return callback(new Error('CORS policy check failed'), false);
