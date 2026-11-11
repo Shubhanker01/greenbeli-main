@@ -11,41 +11,33 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-const standardLimit = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes window
-    max: 30,
-    message: {
-        success: false,
-        message: "Too many attempts please try again later"
-    },
-    standardHeaders: true, // Return rate limit info in the headers
+const verifyLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 7,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    skipSuccessfulRequests: true, // only failed attempts count
+    message: { message: 'Too many attempts. Please try again later.' },
+});
+
+// Reset request: stops email/SMS spam and enumeration
+const resetRequestLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    limit: 3,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { message: 'Too many reset requests. Please try again later.' },
+});
+
+// Enrollment: more lenient
+const enrollLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: 'draft-7',
     legacyHeaders: false,
 });
 
-const publicSubmitLimit = rateLimit({
-    windowMs: 60 * 60 * 1000,   // 1 hour
-    limit: 5,                   // 5 submissions per hour per IP
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Too many submissions. Please try again later." },
-});
-
-const reviewSubmitLimit = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    limit: 5,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Too many review submissions. Please try again later." },
-});
-
-// A short burst guard on top, so a script can't spend all 5 in a second
-const burstLimit = rateLimit({
-    windowMs: 60 * 1000,
-    limit: 2,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, message: "Please wait a moment before submitting again." },
-});
 
 
-module.exports = { loginLimiter, standardLimit, publicSubmitLimit, reviewSubmitLimit, burstLimit };
+
+module.exports = { loginLimiter, enrollLimiter, verifyLimiter, resetRequestLimiter };
