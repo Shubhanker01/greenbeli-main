@@ -94,18 +94,22 @@ export default function Navbar() {
     <>
       <header className="sticky top-0 z-40 w-full transition-all duration-300">
         {/* Top Banner */}
-        <div className="bg-emerald-950 text-emerald-100 text-[11px] sm:text-xs py-1.5 sm:py-2 px-3 sm:px-4 flex items-center justify-between font-medium border-b border-emerald-900/60">
-          <div className="flex items-center gap-1.5 sm:gap-2 mx-auto sm:mx-0 truncate">
+        <div className="bg-emerald-950 text-emerald-100 text-[11px] sm:text-xs py-1.5 sm:py-2 px-3 sm:px-4 flex flex-wrap items-center justify-between gap-2 font-medium border-b border-emerald-900/60">
+          <div className="flex items-center gap-1.5 sm:gap-2 truncate">
             <span className="bg-emerald-800 text-emerald-200 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase font-bold tracking-wider shrink-0">
               Special
             </span>
             <span className="truncate">🌱 20% OFF indoor plants! Code: <b className="text-emerald-300 font-extrabold">GREEN20</b></span>
           </div>
-          <div className="hidden sm:flex items-center gap-6 text-xs text-emerald-300">
-            <a href="tel:+919950711475" className="flex items-center gap-1.5 hover:text-white transition">
-              <PhoneCall className="w-3.5 h-3.5" /> {state.supportPhone}
+          <div className="flex items-center gap-4 sm:gap-6 text-emerald-300">
+            <a
+              href={`tel:${state.supportPhone || "+919950711475"}`}
+              className="flex items-center gap-1.5 text-lg font-bold underline hover:text-white transition"
+            >
+              <PhoneCall className="w-5 h-5 shrink-0" />
+              <span>{state.supportPhone || "+919950711475"}</span>
             </a>
-            <span>Free Express Delivery Over ₹499</span>
+            <span className="hidden md:inline text-xs">Free Express Delivery Over ₹499</span>
           </div>
         </div>
 
@@ -538,59 +542,6 @@ export default function Navbar() {
           </div>
         )}
       </header>
-
-      {/* Glassmorphic Mobile Bottom Navigation Bar (<640px screens) */}
-      <div className="glass-bottom-bar fixed bottom-0 left-0 right-0 z-40 sm:hidden py-1 px-4 flex items-center justify-around">
-        <Link
-          to="/"
-          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${location.pathname === "/" ? "text-emerald-700 font-bold" : "text-slate-500"
-            }`}
-        >
-          <HomeIcon className="w-5 h-5" />
-          <span>Home</span>
-        </Link>
-
-        <Link
-          to="/products"
-          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${location.pathname.startsWith("/products") || location.pathname.startsWith("/category")
-              ? "text-emerald-700 font-bold"
-              : "text-slate-500"
-            }`}
-        >
-          <LayoutGrid className="w-5 h-5" />
-          <span>Shop</span>
-        </Link>
-
-        <button
-          onClick={() => setIsSearchOpen(true)}
-          className="flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium text-slate-500 transition touch-active"
-        >
-          <Search className="w-5 h-5" />
-          <span>Search</span>
-        </button>
-
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium text-slate-500 relative transition touch-active"
-        >
-          <div className="relative">
-            <ShoppingBag className="w-5 h-5" />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-2 bg-emerald-700 text-white rounded-full text-[9px] font-bold w-4 h-4 flex items-center justify-center">
-                {totalItems}
-              </span>
-            )}
-          </div>
-          <span>Cart</span>
-        </button>        <Link
-          to={isAuthenticated ? "/profile" : "/login"}
-          className={`flex flex-col items-center gap-0.5 py-1 text-[10px] font-medium transition touch-active ${["/profile", "/login", "/orders"].includes(location.pathname) ? "text-emerald-700 font-bold" : "text-slate-500"
-            }`}
-        >
-          <User className="w-5 h-5" />
-          <span>{isAuthenticated ? "Profile" : "Account"}</span>
-        </Link>
-      </div>
     </>
   );
 }

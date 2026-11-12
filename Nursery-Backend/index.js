@@ -23,8 +23,13 @@ const customerRoutes = require("./src/routes/customers");
 const settingRoutes = require("./src/routes/settingRoutes");
 const contentRoutes = require("./src/routes/contentRoutes");
 const plantCareRoutes = require("./src/routes/plantCareRoutes");
+
 const app = express();
 const port = process.env.PORT || 5007;
+const isProd = process.env.NODE_ENV === "production";
+
+// Render sits behind a proxy; needed so Express sees HTTPS and allows `secure` cookies.
+app.set("trust proxy", 1);
 
 app.use(
   helmet({
@@ -33,41 +38,81 @@ app.use(
   })
 );
 
-const envOrigins = process.env.CLIENT_ORIGIN ? process.env.CLIENT_ORIGIN.split(',').map(s => s.trim()) : [];
+const envOrigins = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.split(",")
+      .map((s) => s.trim().replace(/\/+$/, "")) // strip trailing slashes
+      .filter(Boolean)
+  : [];
 
-const allowedOrigins = Array.from(new Set([
-  'https://greenbeli.in',
-  'https://www.greenbeli.in',
-  'https://admin.greenbeli.in',
-  'https://api.greenbeli.in',
-  'http://greenbeli.in',
-  'http://www.greenbeli.in',
-  'http://admin.greenbeli.in',
-  'http://api.greenbeli.in',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-  'http://localhost:5176',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:5174',
-  'https://greenbeli.vercel.app/',
-  ...envOrigins
-]));
+const exactOrigins = new Set([
+  "https://greenbeli.in",
+  "https://www.greenbeli.in",
+  "https://admin.greenbeli.in",
+  "https://api.greenbeli.in",
+  "https://greenbeli.vercel.app",
+  ...envOrigins,
+]);
+
+const greenbeliRegex = /^https:\/\/([a-z0-9-]+\.)?greenbeli\.in$/;
+
+// Optional: Vercel preview deployments. Disabled unless VERCEL_TEAM_SLUG is set,
+// because a loose pattern lets anyone deploy a matching *.vercel.app site.
+// Preview URLs look like: greenbeli-git-<branch>-<team>.vercel.app
+const teamSlug = (process.env.VERCEL_TEAM_SLUG || "").replace(/[^a-z0-9-]/gi, "");
+const vercelPreviewRegex = teamSlug
+  ? new RegExp(`^https://greenbeli-[a-z0-9-]+-${teamSlug}\\.vercel\\.app$`)
+  : null;
+
+// Local development only.
+const localDevRegex = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/;
+
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (exactOrigins.has(origin)) return true;
+  if (greenbeliRegex.test(origin)) return true;
+  if (vercelPreviewRegex && vercelPreviewRegex.test(origin)) return true;
+  if (!isProd && localDevRegex.test(origin)) return true;
+  return false;
+}
 
 const corsMiddleware = cors({
-  origin: function (origin, callback) {
+  origin(origin, callback) {
+    // No Origin header: curl, health checks, server-to-server, mobile apps.
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.greenbeli.in') || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || origin.endsWith('greenbeli.vercel.app')) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS policy check failed'), false);
+    // Disallowed origins simply get no CORS headers (browser blocks them).
+    return callback(null, isAllowedOrigin(origin));
   },
-  credentials: true
+  credentials: true,
 });
 
+// cors() also answers OPTIONS preflights, so a separate app.options("*") is not needed
+// (and "*" breaks on Express 5).
 app.use(corsMiddleware);
-app.options("*", corsMiddleware);
+
+
+function csrfOriginCheck(req, res, next) {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+
+  let origin = req.headers.origin;
+  if (!origin && req.headers.referer) {
+    try {
+      origin = new URL(req.headers.referer).origin;
+    } catch (_) {
+      return res.status(403).json({ message: "Invalid origin" });
+    }
+  }
+
+  // Neither header present: not a browser cross-site request.
+  if (!origin) return next();
+
+  if (!isAllowedOrigin(origin)) {
+    return res.status(403).json({ message: "Invalid origin" });
+  }
+  next();
+}
+
+app.use(csrfOriginCheck);
+
 app.use(express.json());
 app.use(cookieParser());
 
