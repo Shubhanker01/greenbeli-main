@@ -19,18 +19,29 @@ export default function Orders() {
   }, []);
 
   const handleStatusChange = async (id, newStatus) => {
-    await updateOrderStatusApi(id, newStatus);
-    setOrders((prev) =>
-      prev.map((o) => (o._id === id ? { ...o, status: newStatus } : o))
-    );
-    if (selectedOrder?._id === id) {
-      setSelectedOrder((prev) => ({ ...prev, status: newStatus }));
+    try {
+      await updateOrderStatusApi(id, newStatus);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id === id ? { ...o, orderStatus: newStatus, status: newStatus } : o
+        )
+      );
+      if (selectedOrder?._id === id) {
+        setSelectedOrder((prev) => ({
+          ...prev,
+          orderStatus: newStatus,
+          status: newStatus,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to update order status:", err);
     }
   };
 
   const filtered = orders.filter((o) => {
     if (statusFilter === "all") return true;
-    return o.status?.toLowerCase() === statusFilter.toLowerCase();
+    const currentStatus = o.orderStatus || o.status;
+    return currentStatus?.toLowerCase() === statusFilter.toLowerCase();
   });
 
   return (
@@ -81,7 +92,9 @@ export default function Orders() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((order) => (
+                {filtered.map((order) => {
+                  const currentStatus = order.orderStatus || order.status || "Processing";
+                  return (
                   <tr key={order._id} className="hover:bg-slate-50/80 transition">
                     <td className="py-3.5 px-4 font-bold text-slate-900">#{order._id}</td>
                     <td className="py-3.5 px-4 text-slate-700 font-medium">
@@ -96,12 +109,12 @@ export default function Orders() {
                     <td className="py-3.5 px-4 font-extrabold text-emerald-950">₹{order.totalPrice ?? order.totalAmount}</td>
                     <td className="py-3.5 px-4">
                       <select
-                        value={order.status || "Processing"}
+                        value={currentStatus}
                         onChange={(e) => handleStatusChange(order._id, e.target.value)}
                         className={`text-xs font-bold rounded-xl px-2.5 py-1 border focus:outline-none cursor-pointer ${
-                          order.status === "Delivered"
+                          currentStatus === "Delivered"
                             ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                            : order.status === "Shipped"
+                            : currentStatus === "Shipped"
                             ? "bg-sky-100 text-sky-800 border-sky-300"
                             : "bg-amber-100 text-amber-800 border-amber-300"
                         }`}
@@ -121,7 +134,8 @@ export default function Orders() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>
