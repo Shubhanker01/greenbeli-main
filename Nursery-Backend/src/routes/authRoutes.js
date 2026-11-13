@@ -14,11 +14,11 @@ const {
   confirmEmail,
   userSession,
 } = require("../controllers/authController");
-const { loginLimiter } = require("../middleware/rateLimit");
+const { loginLimiter, userLoginLimiter } = require("../middleware/rateLimit");
 
 router.post("/register", loginLimiter, register);
 router.post("/confirm", loginLimiter, confirmEmail);
-router.post("/login", loginLimiter, login);
+router.post("/login", userLoginLimiter, login);
 router.post("/forgot-password", loginLimiter, forgotPassword);
 router.get("/reset-password/validate", loginLimiter, validatePasswordResetToken);
 router.post("/reset-password", loginLimiter, changePassword);

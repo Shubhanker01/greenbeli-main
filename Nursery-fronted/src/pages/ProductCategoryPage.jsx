@@ -44,7 +44,8 @@ export default function ProductCategoryPage({ category }) {
         const foundCategory = categories.find(
           (item) =>
             item.slug?.toLowerCase() === normalizedTarget ||
-            item.name?.trim().toLowerCase() === normalizedTarget
+            item.name?.trim().toLowerCase() === normalizedTarget ||
+            item._id === targetCategory
         );
         const resolvedCategory = foundCategory || null;
 
@@ -108,9 +109,10 @@ export default function ProductCategoryPage({ category }) {
           <ArrowLeft className="h-4 w-4" /> All plants
         </Link>
 
-        {/* Heading first: eyebrow, big title, short description */}
-        <Reveal className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-[1.1fr_1fr] lg:items-end lg:gap-14">
-          <div className="space-y-3 sm:space-y-4">
+        {/* Heading + Image + Description in a flex row */}
+        <Reveal className="flex flex-col gap-6 sm:gap-8 lg:flex-row lg:items-start lg:gap-12">
+          {/* Left: eyebrow + title */}
+          <div className="space-y-3 sm:space-y-4 lg:flex-1">
             <p
               style={{ color: GREEN }}
               className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] sm:text-sm"
@@ -120,25 +122,27 @@ export default function ProductCategoryPage({ category }) {
             </p>
             <h1
               style={{ color: GREEN }}
-              className="serif-font text-4xl font-medium leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl"
+              className="serif-font text-4xl font-medium leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
             >
               {categoryTitle}
             </h1>
+            <p className="max-w-lg text-base leading-relaxed text-stone-600 sm:text-lg">
+              {info?.description ||
+                `Explore our ${categoryTitle.toLowerCase()} collection, selected to bring more life and greenery into your space.`}
+            </p>
+            {products.length > 0 && (
+              <span className="inline-block rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-semibold text-[#1f4a34]">
+                {countLabel} in this collection
+              </span>
+            )}
           </div>
 
-          <p className="max-w-xl text-base leading-relaxed text-stone-600 sm:text-lg">
-            {info?.description ||
-              `Explore our ${categoryTitle.toLowerCase()} collection, selected to bring more life and greenery into your space.`}
-          </p>
-        </Reveal>
-
-        {/* Big banner image (same arched corner as the homepage hero) */}
-        {loading ? (
-          <div className="mt-8 h-64 animate-pulse rounded-tl-[5rem] rounded-tr-md rounded-b-md bg-emerald-100/60 sm:mt-10 sm:h-96 sm:rounded-tl-[9rem] lg:h-[30rem] lg:rounded-tl-[12rem]" />
-        ) : (
-          categoryImage && (
-            <Reveal effect="rise" className="mt-8 sm:mt-10">
-              <div className="group relative h-64 overflow-hidden rounded-tl-[5rem] rounded-tr-md rounded-b-md bg-emerald-100/60 shadow-xl shadow-emerald-950/10 sm:h-96 sm:rounded-tl-[9rem] lg:h-[30rem] lg:rounded-tl-[12rem]">
+          {/* Right: smaller category image */}
+          {loading ? (
+            <div className="h-56 w-full animate-pulse rounded-tl-[4rem] rounded-tr-md rounded-b-md bg-emerald-100/60 sm:h-72 lg:h-80 lg:w-80 lg:shrink-0 xl:w-96" />
+          ) : (
+            categoryImage && (
+              <div className="group relative h-56 w-full overflow-hidden rounded-tl-[4rem] rounded-tr-md rounded-b-md bg-emerald-100/60 shadow-lg shadow-emerald-950/10 sm:h-72 lg:h-80 lg:w-80 lg:shrink-0 xl:w-96">
                 <img
                   src={resolveImageUrl(categoryImage)}
                   alt={`${categoryTitle} collection`}
@@ -148,15 +152,10 @@ export default function ProductCategoryPage({ category }) {
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 to-transparent"
                 />
-                {products.length > 0 && (
-                  <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-[#1f4a34] shadow-md backdrop-blur-sm sm:bottom-6 sm:left-6">
-                    {countLabel} in this collection
-                  </span>
-                )}
               </div>
-            </Reveal>
-          )
-        )}
+            )
+          )}
+        </Reveal>
 
         {/* Products */}
         <div className="mt-12 sm:mt-16">

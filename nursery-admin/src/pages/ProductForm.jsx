@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Save, Upload, Sparkles, Plus } from "lucide-react";
+import { ArrowLeft, Save, Upload, X } from "lucide-react";
 import { addProductApi, updateProductApi, getAdminCategoriesApi, getAdminProductsApi } from "../utils/adminApi";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
@@ -24,8 +24,11 @@ export default function ProductForm() {
     description: "",
   });
 
-  const [images, setImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
+  // existingImages  → URLs already saved on the server (shown on edit load)
+  // newImages       → File objects the admin just picked from disk
+  const [existingImages, setExistingImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const fileInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -34,6 +37,12 @@ export default function ProductForm() {
     async function loadInitialData() {
       const cats = await getAdminCategoriesApi();
       setCategories(cats);
+      if (!isEdit && cats.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          category: prev.category || cats[0].name,
+        }));
+      }
 
       if (isEdit) {
         const prods = await getAdminProductsApi();
@@ -43,7 +52,7 @@ export default function ProductForm() {
             name: found.name || "",
             price: found.price || "",
             originalPrice: found.originalPrice || "",
-            category: found.category || "Indoor Plants",
+            category: found.category || found.categoryId?.name || "Indoor Plants",
             stock: found.stock || 20,
             careLevel: found.careLevel || "Easy",
             lightRequirement: found.lightRequirement || "Bright Indirect Light",
@@ -52,7 +61,7 @@ export default function ProductForm() {
             description: found.description || "",
           });
           if (found.images?.length > 0) {
-            setImagePreviews(found.images);
+            setExistingImages(found.images);
           }
         }
       }
@@ -60,11 +69,23 @@ export default function ProductForm() {
     loadInitialData();
   }, [id, isEdit]);
 
+  // Add newly picked files (append, don't replace)
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setImages(files);
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setImagePreviews(previews);
+    if (!files.length) return;
+    setNewImages((prev) => [...prev, ...files]);
+    // Reset the input so the same file can be re-added after removal
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Remove an existing server-URL image
+  const removeExistingImage = (index) => {
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Remove a newly picked File object
+  const removeNewImage = (index) => {
+    setNewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -77,13 +98,15 @@ export default function ProductForm() {
       body.append(key, formData[key]);
     });
 
-    images.forEach((file) => {
-      body.append("images", file);
-    });
+    // Tell the backend which existing image URLs to keep
+    existingImages.forEach((url) => body.append("images", url));
+
+    // Attach new file uploads
+    newImages.forEach((file) => body.append("images", file));
 
     try {
       if (isEdit) {
-        await updateProductApi(id, formData);
+        await updateProductApi(id, body);
       } else {
         await addProductApi(body, authStatus);
       }
@@ -147,12 +170,22 @@ export default function ProductForm() {
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
             >
-              <option value="Indoor Plants">Indoor Plants</option>
-              <option value="Outdoor Plants">Outdoor Plants</option>
-              <option value="Pots & Planters">Pots & Planters</option>
-              <option value="Gardening Tools">Gardening Tools</option>
-              <option value="Plant Care">Plant Care</option>
-              <option value="Seeds & Bulbs">Seeds & Bulbs</option>
+              {categories && categories.length > 0 ? (
+                categories.map((cat) => (
+                  <option key={cat._id || cat.slug || cat.name} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="Indoor Plants">Indoor Plants</option>
+                  <option value="Outdoor Plants">Outdoor Plants</option>
+                  <option value="Pots & Planters">Pots & Planters</option>
+                  <option value="Gardening Tools">Gardening Tools</option>
+                  <option value="Plant Care">Plant Care</option>
+                  <option value="Seeds & Bulbs">Seeds & Bulbs</option>
+                </>
+              )}
             </select>
           </div>
         </div>
@@ -252,6 +285,7 @@ export default function ProductForm() {
           <label className="block text-xs font-bold text-slate-700 mb-1">Plant Photos</label>
           <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition cursor-pointer relative">
             <input
+              ref={fileInputRef}
               type="file"
               multiple
               accept="image/*"
@@ -263,11 +297,50 @@ export default function ProductForm() {
             <p className="text-[10px] text-slate-400">PNG, JPG, WEBP up to 5MB</p>
           </div>
 
-          {imagePreviews.length > 0 && (
-            <div className="flex gap-3 mt-3 overflow-x-auto">
-              {imagePreviews.map((src, i) => (
-                <img key={i} src={src} alt="Preview" className="w-16 h-16 object-cover rounded-xl border border-slate-200" />
+          {/* Preview grid — existing server images + newly picked files */}
+          {(existingImages.length > 0 || newImages.length > 0) && (
+            <div className="flex flex-wrap gap-3 mt-3">
+
+              {/* Existing saved images */}
+              {existingImages.map((src, i) => (
+                <div key={`existing-${i}`} className="relative group w-16 h-16 shrink-0">
+                  <img
+                    src={src}
+                    alt={`Existing ${i + 1}`}
+                    className="w-full h-full object-cover rounded-xl border border-slate-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(i)}
+                    aria-label="Remove image"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               ))}
+
+              {/* Newly picked files (not yet uploaded) */}
+              {newImages.map((file, i) => (
+                <div key={`new-${i}`} className="relative group w-16 h-16 shrink-0">
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`New ${i + 1}`}
+                    className="w-full h-full object-cover rounded-xl border-2 border-emerald-400"
+                  />
+                  {/* Green dot = pending upload */}
+                  <span className="absolute bottom-1 left-1 w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" title="Pending upload" />
+                  <button
+                    type="button"
+                    onClick={() => removeNewImage(i)}
+                    aria-label="Remove image"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+
             </div>
           )}
         </div>

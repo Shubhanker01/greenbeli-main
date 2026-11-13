@@ -1,10 +1,10 @@
-const { transporter, fromEmail, isEmailConfigured } = require('../config/transporter');
+const { brevo, sender, isEmailConfigured } = require('../config/transporter');
 
 // Common function to send emails
 const sendEmail = async (to, subject, text, html = null) => {
     try {
         if (!isEmailConfigured) {
-            throw new Error("Brevo SMTP is not configured");
+            throw new Error("Brevo API is not configured");
         }
 
         // ✅ ensure valid recipients
@@ -12,17 +12,18 @@ const sendEmail = async (to, subject, text, html = null) => {
             throw new Error("No recipients provided");
         }
 
-        const mailOptions = {
-            from: fromEmail,
-            to: Array.isArray(to) ? to.join(',') : to, // ✅ fix here
-            subject,
-            text,
-            html: html || text,
-        };
+        const recipients = (Array.isArray(to) ? to : [to]).map((email) => ({ email }));
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent successfully:', info.messageId);
-        return info;
+        const response = await brevo.transactionalEmails.sendTransacEmail({
+            sender,
+            to: recipients,
+            subject,
+            textContent: text,
+            htmlContent: html || text,
+        });
+
+        console.log('Email sent successfully:', response.messageId || (response.messageIds && response.messageIds[0]));
+        return response;
 
     } catch (error) {
         console.error('Error sending email:', error);

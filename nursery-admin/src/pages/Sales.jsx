@@ -1,103 +1,123 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Receipt, Plus, Trash2 } from "lucide-react";
-import { getPosProductsApi, createSaleApi } from "../utils/adminApi";
+import {
+  TrendingUp,
+  ShoppingBag,
+  IndianRupee,
+  PackageCheck,
+  Store,
+  RefreshCw,
+  Calendar,
+  Layers,
+} from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+} from "recharts";
+import { getSalesAnalyticsApi } from "../utils/adminApi";
+
+const formatCurrency = (val) =>
+  `₹${Number(val || 0).toLocaleString("en-IN")}`;
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-xl border border-slate-100 text-xs space-y-1.5">
+        <p className="font-bold text-slate-800 text-sm mb-1">{label}</p>
+        <p className="text-emerald-700 font-semibold flex items-center justify-between gap-4">
+          <span>Delivered Orders:</span>
+          <span>{formatCurrency(payload[0]?.value)}</span>
+        </p>
+        {payload[1] && (
+          <p className="text-indigo-600 font-semibold flex items-center justify-between gap-4">
+            <span>POS Sales:</span>
+            <span>{formatCurrency(payload[1]?.value)}</span>
+          </p>
+        )}
+        <div className="border-t border-slate-100 pt-1 mt-1 text-slate-900 font-extrabold flex items-center justify-between gap-4">
+          <span>Total Monthly:</span>
+          <span>
+            {formatCurrency(
+              (Number(payload[0]?.value) || 0) + (Number(payload[1]?.value) || 0)
+            )}
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function Sales() {
-  const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [monthsRange, setMonthsRange] = useState(12);
 
-  const [saleItems, setSaleItems] = useState([
-    { productId: "", quantity: 1 },
-  ]);
-
-  useEffect(() => {
-    let active = true;
-    getPosProductsApi()
-      .then((items) => {
-        if (active) setProducts(items.filter((product) => product.isActive !== false));
-      })
-      .catch((requestError) => {
-        if (active) setError(requestError.message || "Unable to load products.");
-      })
-      .finally(() => {
-        if (active) setLoadingProducts(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const handleProductSelect = (index, prodId) => {
-    setSaleItems((prev) =>
-      prev.map((item, idx) =>
-        idx === index
-          ? { ...item, productId: prodId }
-          : item
-      )
-    );
-  };
-
-  const updateQuantity = (index, qty) => {
-    setSaleItems((prev) =>
-      prev.map((item, idx) => (idx === index ? { ...item, quantity: Math.max(1, qty) } : item))
-    );
-  };
-
-  const addItemRow = () => {
-    setSaleItems((items) => [...items, { productId: "", quantity: 1 }]);
-  };
-
-  const removeItemRow = (index) => {
-    setSaleItems((items) => items.filter((_, idx) => idx !== index));
-  };
-
-  const selectedLines = saleItems.map((item) => {
-    const product = products.find((candidate) => candidate._id === item.productId);
-    const basePrice = Number(product?.price || 0);
-    const discount = Number(product?.discount || 0);
-    const unitPrice = product?.discountType === "percent"
-      ? Math.max(0, basePrice - (basePrice * discount) / 100)
-      : Math.max(0, basePrice - discount);
-    return { ...item, product, unitPrice };
-  });
-  const totalAmount = selectedLines.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-
-  const handleCreateSale = async (e) => {
-    e.preventDefault();
+  const fetchAnalytics = async () => {
+    setLoading(true);
     setError("");
-    setSubmitting(true);
     try {
-      const sale = await createSaleApi({
-        customerName: customerName.trim() || "Walk-in Customer",
-        customerPhone: customerPhone.trim(),
-        paymentMethod,
-        items: saleItems.map(({ productId, quantity }) => ({ productId, quantity })),
-      });
-      if (!sale?._id) throw new Error("Sale was created but no receipt ID was returned.");
-      navigate(`/sales/${sale._id}`);
-    } catch (requestError) {
-      setError(requestError.message || "Unable to create the sale.");
+      const data = await getSalesAnalyticsApi(monthsRange);
+      setAnalytics(data);
+    } catch (err) {
+      setError(err.message || "Failed to load sales analytics data.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchAnalytics();
+  }, [monthsRange]);
+
+  const summary = analytics?.summary || {};
+  const chartData = analytics?.chart || [];
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div>
-        <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest">
-          Store POS Terminal
-        </span>
-        <h1 className="serif-font text-3xl font-bold text-slate-900 mt-0.5">
-          Counter Sale & Receipt Generator
-        </h1>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest">
+            Sales & Revenue Analytics
+          </span>
+          <h1 className="serif-font text-3xl font-bold text-slate-900 mt-0.5">
+            Sales Overview
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Real-time track of delivered revenue, total orders, and all-over sales performance.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-white border border-slate-200 rounded-2xl p-1 shadow-sm text-xs font-semibold text-slate-600">
+            <Calendar className="w-3.5 h-3.5 ml-2 text-slate-400" />
+            <select
+              value={monthsRange}
+              onChange={(e) => setMonthsRange(Number(e.target.value))}
+              className="bg-transparent px-2.5 py-1 text-xs focus:outline-none cursor-pointer"
+            >
+              <option value={6}>Last 6 Months</option>
+              <option value={12}>Last 12 Months</option>
+              <option value={24}>Last 24 Months</option>
+            </select>
+          </div>
+
+          <button
+            onClick={fetchAnalytics}
+            disabled={loading}
+            className="p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl text-slate-600 shadow-sm transition disabled:opacity-50"
+            title="Refresh statistics"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-emerald-700" : ""}`} />
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -105,115 +125,176 @@ export default function Sales() {
           {error}
         </div>
       )}
-      <form onSubmit={handleCreateSale} className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm space-y-6">
-          
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Customer Name</label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Walk-in Customer"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
-              />
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Customer Phone</label>
-              <input
-                type="tel"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="+91 98765 43210"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Payment Method</label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-emerald-600"
-              >
-                <option value="Cash">Cash</option>
-                <option value="UPI">UPI / GPay</option>
-                <option value="Card">Card POS</option>
-              </select>
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Delivered Revenue */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Delivered Revenue
+            </span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <IndianRupee className="w-5 h-5" />
             </div>
           </div>
-
-          {/* Sale Items Table */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Select Purchased Items</h4>
-              <button
-                type="button"
-                onClick={addItemRow}
-                className="text-xs font-bold text-emerald-800 flex items-center gap-1 hover:underline"
-              >
-                <Plus className="w-3.5 h-3.5" /> Add Row
-              </button>
+          <div>
+            <h3 className="serif-font text-3xl font-extrabold text-slate-900">
+              {loading ? "…" : formatCurrency(summary.orderRevenue)}
+            </h3>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px] font-semibold text-emerald-700">
+              <PackageCheck className="w-3.5 h-3.5" />
+              <span>{summary.deliveredOrders ?? 0} delivered orders</span>
             </div>
+          </div>
+        </div>
 
-            {selectedLines.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                <select
-                  required
-                  value={item.productId}
-                  onChange={(e) => handleProductSelect(idx, e.target.value)}
-                  className="flex-1 bg-white border border-slate-200 rounded-xl p-2 text-xs text-slate-800"
-                >
-                  <option value="">{loadingProducts ? "Loading products..." : "Select Plant Product..."}</option>
-                  {products.filter((product) => product.stock > 0 || product._id === item.productId).map((product) => (
-                    <option key={product._id} value={product._id} disabled={product.stock <= 0}>
-                      {product.name} - ₹{product.price} ({product.stock} in stock)
-                    </option>
-                  ))}
-                </select>
+        {/* Total Orders Count */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Total Orders Count
+            </span>
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center">
+              <ShoppingBag className="w-5 h-5" />
+            </div>
+          </div>
+          <div>
+            <h3 className="serif-font text-3xl font-extrabold text-slate-900">
+              {loading ? "…" : (summary.totalOrders ?? 0).toLocaleString("en-IN")}
+            </h3>
+            <p className="text-[11px] font-medium text-slate-400 mt-1">
+              Storewide digital customer orders
+            </p>
+          </div>
+        </div>
 
-                <input
-                  type="number"
-                  min={1}
-                  max={item.product?.stock}
-                  value={item.quantity}
-                  onChange={(e) => updateQuantity(idx, Number(e.target.value))}
-                  className="w-16 bg-white border border-slate-200 rounded-xl p-2 text-xs text-center font-bold"
+        {/* Total Sales All Over */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Total Sales All Over
+            </span>
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
+              <Layers className="w-5 h-5" />
+            </div>
+          </div>
+          <div>
+            <h3 className="serif-font text-3xl font-extrabold text-slate-900">
+              {loading ? "…" : (summary.totalSalesAll ?? 0).toLocaleString("en-IN")}
+            </h3>
+            <p className="text-[11px] font-medium text-slate-400 mt-1">
+              {summary.totalOrders ?? 0} Orders + {summary.posSales ?? 0} POS Counter Sales
+            </p>
+          </div>
+        </div>
+
+        {/* Total Cumulative Revenue */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Total Gross Revenue
+            </span>
+            <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-700 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+          </div>
+          <div>
+            <h3 className="serif-font text-3xl font-extrabold text-slate-900">
+              {loading ? "…" : formatCurrency(summary.totalRevenue)}
+            </h3>
+            <p className="text-[11px] font-medium text-slate-400 mt-1">
+              Delivered Orders + POS Counter Sales
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Revenue Chart Section using Recharts */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="serif-font text-xl font-bold text-slate-900">
+              Revenue Growth Over Time
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Monthly revenue breakdown from delivered customer orders and retail POS sales.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-emerald-600 inline-block" />
+              <span className="text-slate-600">Delivered Orders</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-indigo-500 inline-block" />
+              <span className="text-slate-600">POS Sales</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-[360px] w-full pt-4">
+          {loading && (
+            <div className="h-full flex items-center justify-center text-xs text-slate-400">
+              Loading chart data...
+            </div>
+          )}
+          {!loading && chartData.length === 0 && (
+            <div className="h-full flex items-center justify-center text-xs text-slate-400">
+              No revenue records found for this period.
+            </div>
+          )}
+          {!loading && chartData.length > 0 && (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="orderRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#059669" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#059669" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="posRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={{ stroke: "#e2e8f0" }}
+                  tick={{ fill: "#64748b", fontSize: 11 }}
                 />
-
-                <span className="w-20 text-right text-xs font-extrabold text-slate-900">
-                  ₹{item.unitPrice * item.quantity}
-                </span>
-
-                {saleItems.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeItemRow(idx)}
-                    className="text-slate-300 hover:text-rose-500 p-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-            <div>
-              <span className="text-xs text-slate-400 font-bold uppercase">Total Sale Amount</span>
-              <h3 className="serif-font text-2xl font-extrabold text-emerald-950">₹{totalAmount}</h3>
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting || loadingProducts || products.length === 0}
-              className="bg-emerald-800 hover:bg-emerald-900 disabled:opacity-50 text-white font-extrabold text-xs px-8 py-3.5 rounded-2xl shadow-lg transition flex items-center gap-2"
-            >
-              <Receipt className="w-4 h-4" /> {submitting ? "Processing Sale..." : "Complete Sale"}
-            </button>
-          </div>
-      </form>
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#64748b", fontSize: 11 }}
+                  tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="orderRevenue"
+                  name="Delivered Orders"
+                  stroke="#059669"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#orderRevenueGrad)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="posRevenue"
+                  name="POS Sales"
+                  stroke="#6366f1"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#posRevenueGrad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

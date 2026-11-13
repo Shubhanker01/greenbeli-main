@@ -1,0 +1,33 @@
+User-agent: *
+
+# Disallow private, authentication, checkout, and account routes
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /confirm-email
+Disallow: /profile
+Disallow: /orders
+Disallow: /cart
+
+# Allow public crawlable routes
+Allow: /
+Allow: /products
+Allow: /products/*
+Allow: /product/*
+Allow: /category/*
+Allow: /about
+Allow: /our-story
+Allow: /journal
+Allow: /our-growers
+Allow: /plant-care-guides
+Allow: /shipping-returns
+Allow: /faqs
+Allow: /gift-cards
+Allow: /gallery
+Allow: /proposals
+Allow: /testimonials
+Allow: /contact
+
+# Sitemap location
+Sitemap: https://greenbeli.in/sitemap.xml

@@ -33,8 +33,8 @@ const dashboardStats = asyncHandler(async (_req, res) => {
     totalFaqs: Faq.countDocuments(),
     salesCount: Sale.countDocuments(),
     salesRevenue: sumOf(Sale, "totalAmount"),
-    // Adjust the field name / filter to your Order schema (e.g. exclude cancelled orders)
-    orderRevenue: sumOf(Order, "totalAmount", { status: { $ne: "cancelled" } }),
+    // Revenue from delivered orders only
+    orderRevenue: sumOf(Order, "totalPrice", { orderStatus: "Delivered" }),
   };
 
   const keys = Object.keys(queries);
@@ -59,7 +59,83 @@ const dashboardStats = asyncHandler(async (_req, res) => {
     users: r.totalCustomers,
     salesCount: r.salesCount,
     salesRevenue: r.salesRevenue,
+    orderRevenue: r.orderRevenue,
   });
 });
 
-module.exports = { dashboardStats };
+// GET /api/admin/sales-analytics
+// Returns monthly aggregated revenue from both Orders (Delivered) and POS Sales
+// for the last N months (default 12)
+const salesAnalytics = asyncHandler(async (req, res) => {
+  const months = Math.min(24, Math.max(1, parseInt(String(req.query.months || "12"), 10) || 12));
+
+  // Build date range: start of (months) months ago → now
+  const now = new Date();
+  const startDate = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+  // Helper: aggregate monthly totals for a model
+  const monthlyAgg = (Model, amountField, matchExtra = {}) =>
+    Model.aggregate([
+      { $match: { ...matchExtra, createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          total: { $sum: `$${amountField}` },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+  const [orderRows, salesRows, deliveredCount, totalOrderCount, totalSalesCount] =
+    await Promise.all([
+      monthlyAgg(Order, "totalPrice", { orderStatus: "Delivered" }),
+      monthlyAgg(Sale, "totalAmount"),
+      Order.countDocuments({ orderStatus: "Delivered" }),
+      Order.countDocuments(),
+      Sale.countDocuments(),
+    ]);
+
+  // Build a lookup map keyed by "YYYY-MM"
+  const orderMap = new Map(orderRows.map((r) => [`${r._id.year}-${r._id.month}`, r]));
+  const salesMap = new Map(salesRows.map((r) => [`${r._id.year}-${r._id.month}`, r]));
+
+  const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const chart = [];
+  for (let i = 0; i < months; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - (months - 1) + i, 1);
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    const orderRow = orderMap.get(key);
+    const salesRow = salesMap.get(key);
+    chart.push({
+      month: `${MONTH_LABELS[d.getMonth()]} ${d.getFullYear()}`,
+      orderRevenue: Number(orderRow?.total || 0),
+      posRevenue: Number(salesRow?.total || 0),
+      totalRevenue: Number(orderRow?.total || 0) + Number(salesRow?.total || 0),
+      orderCount: Number(orderRow?.count || 0),
+      posCount: Number(salesRow?.count || 0),
+    });
+  }
+
+  // Overall totals
+  const totalOrderRevenue = orderRows.reduce((s, r) => s + Number(r.total || 0), 0);
+  const totalPosRevenue = salesRows.reduce((s, r) => s + Number(r.total || 0), 0);
+
+  res.json({
+    chart,
+    summary: {
+      deliveredOrders: deliveredCount,
+      totalOrders: totalOrderCount,
+      posSales: totalSalesCount,
+      totalSalesAll: totalOrderCount + totalSalesCount,
+      orderRevenue: totalOrderRevenue,
+      posRevenue: totalPosRevenue,
+      totalRevenue: totalOrderRevenue + totalPosRevenue,
+    },
+  });
+});
+
+module.exports = { dashboardStats, salesAnalytics };

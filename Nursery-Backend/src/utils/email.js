@@ -1,21 +1,19 @@
 require('dotenv').config();
-const { transporter, fromEmail, isEmailConfigured } = require("../config/transporter")
+const { brevo, sender, isEmailConfigured } = require("../config/transporter");
+
 const esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-
-
 async function sendPasswordResetEmail({ toEmail, resetUrl }) {
-    if (!isEmailConfigured) throw new Error("Brevo SMTP is not configured");
+    if (!isEmailConfigured) throw new Error("Brevo API is not configured");
 
     try {
-        const info = await transporter.sendMail({
-            from: fromEmail, // sender address
-            to: toEmail, // list of recipients
-            subject: "Reset Password", // subject line
-            text: "reset password", // plain text body
-            html:
-                `
+        const response = await brevo.transactionalEmails.sendTransacEmail({
+            sender,
+            to: [{ email: toEmail }],
+            subject: "Reset Password",
+            textContent: "reset password",
+            htmlContent: `
                  <div style="font-family: sans-serif; max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px;">
                      <h2 style="color: #0f172a; margin-top: 0;">Emergency Password Reset</h2>
                     <p style="color: #475569; font-size: 14px; line-height: 1.5;">
@@ -32,11 +30,11 @@ async function sendPasswordResetEmail({ toEmail, resetUrl }) {
                    <p style="color: #94a3b8; font-size: 12px; line-height: 1.4;">
                         If you did not request this, please ignore this email. Your password will remain unchanged.
                      </p>
-                 </div>             `, // HTML body
+                 </div>             `,
         });
 
-        console.log("Message sent: %s", info.messageId);
-
+        console.log("Message sent: %s", response.messageId || (response.messageIds && response.messageIds[0]));
+        return response;
     } catch (err) {
         console.error("Error while sending mail:", err);
         throw err;
@@ -44,15 +42,15 @@ async function sendPasswordResetEmail({ toEmail, resetUrl }) {
 }
 
 async function sendCustomerPasswordResetEmail({ toEmail, resetUrl }) {
-    if (!isEmailConfigured) return { success: false, error: "Brevo SMTP is not configured" };
+    if (!isEmailConfigured) return { success: false, error: "Brevo API is not configured" };
 
     try {
-        await transporter.sendMail({
-            from: fromEmail,
-            to: toEmail,
+        await brevo.transactionalEmails.sendTransacEmail({
+            sender,
+            to: [{ email: toEmail }],
             subject: "Reset your GreenBeli password",
-            text: `We received a request to reset your GreenBeli password. Open this link within 15 minutes to choose a new password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
-            html: `
+            textContent: `We received a request to reset your GreenBeli password. Open this link within 15 minutes to choose a new password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+            htmlContent: `
             <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:540px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:30px;">
               <h2 style="color:#0f172a;margin-top:0;">Reset your password</h2>
               <p style="color:#475569;font-size:14px;line-height:1.5;">We received a request to reset your GreenBeli password. Use the button below within <strong>15 minutes</strong> to choose a new password.</p>
@@ -70,14 +68,14 @@ async function sendCustomerPasswordResetEmail({ toEmail, resetUrl }) {
 }
 
 async function sendEmergencyOtpEmail({ toEmail, otp }) {
-    if (!isEmailConfigured) return { success: false, error: "Brevo SMTP is not configured" };
+    if (!isEmailConfigured) return { success: false, error: "Brevo API is not configured" };
 
     try {
-        const info = await transporter.sendMail({
-            from: fromEmail,
-            to: toEmail,
+        await brevo.transactionalEmails.sendTransacEmail({
+            sender,
+            to: [{ email: toEmail }],
             subject: 'Your Emergency MFA Reset Verification Code',
-            html: `
+            htmlContent: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
                     <div style="background: #0f172a; padding: 20px; text-align: center; border-bottom: 4px solid #facc15;">
                         <h2 style="color: #ffffff; margin: 0; font-size: 18px;">
@@ -115,16 +113,16 @@ async function sendEmergencyOtpEmail({ toEmail, otp }) {
 }
 
 async function sendEmailConfirmation({ toEmail, confirmationUrl, name = "there", minutes = 15 }) {
-    if (!isEmailConfigured) return { success: false, error: "Brevo SMTP is not configured" };
+    if (!isEmailConfigured) return { success: false, error: "Brevo API is not configured" };
 
     const safeUrl = esc(confirmationUrl);
     try {
-        await transporter.sendMail({
-            from: fromEmail,
-            to: toEmail,
+        await brevo.transactionalEmails.sendTransacEmail({
+            sender,
+            to: [{ email: toEmail, name: name !== "there" ? name : undefined }],
             subject: "Confirm your email: GreenBeli Gardeniya",
-            text: `Hi ${name},\n\nConfirm your email by opening this link (valid for ${minutes} minutes):\n${confirmationUrl}\n\nIf you didn't sign up, ignore this email.`,
-            html: `
+            textContent: `Hi ${name},\n\nConfirm your email by opening this link (valid for ${minutes} minutes):\n${confirmationUrl}\n\nIf you didn't sign up, ignore this email.`,
+            htmlContent: `
             <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:540px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
               <div style="background:#1f4a34;padding:20px;text-align:center;border-bottom:4px solid #facc15;">
                 <h2 style="color:#ffffff;margin:0;font-size:18px;">GreenBeli <span style="color:#facc15;">Gardeniya</span></h2>
@@ -153,7 +151,7 @@ async function sendEmailConfirmation({ toEmail, confirmationUrl, name = "there",
 }
 
 async function sendOrderConfirmationEmail({ toEmail, customerName = "there", order }) {
-    if (!isEmailConfigured) return { success: false, error: "Brevo SMTP is not configured" };
+    if (!isEmailConfigured) return { success: false, error: "Brevo API is not configured" };
 
     const displayName = customerName || "there";
     const safeName = esc(displayName);
@@ -172,12 +170,12 @@ async function sendOrderConfirmationEmail({ toEmail, customerName = "there", ord
         .join("\n");
 
     try {
-        await transporter.sendMail({
-            from: fromEmail,
-            to: toEmail,
+        await brevo.transactionalEmails.sendTransacEmail({
+            sender,
+            to: [{ email: toEmail, name: displayName !== "there" ? displayName : undefined }],
             subject: `Order confirmation: ${order._id}`,
-            text: `Hi ${displayName},\n\nThank you for your order!\nOrder ID: ${order._id}\n\n${textItems}\n\nItems: ${formatPrice(order.itemPrice)}\nTax: ${formatPrice(order.taxPrice)}\nShipping: ${formatPrice(order.shippingPrice)}\nTotal: ${formatPrice(order.totalPrice)}\n\nYour order is ${order.orderStatus}.`,
-            html: `
+            textContent: `Hi ${displayName},\n\nThank you for your order!\nOrder ID: ${order._id}\n\n${textItems}\n\nItems: ${formatPrice(order.itemPrice)}\nTax: ${formatPrice(order.taxPrice)}\nShipping: ${formatPrice(order.shippingPrice)}\nTotal: ${formatPrice(order.totalPrice)}\n\nYour order is ${order.orderStatus}.`,
+            htmlContent: `
             <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
               <div style="background:#1f4a34;padding:20px;text-align:center;border-bottom:4px solid #facc15;">
                 <h2 style="color:#ffffff;margin:0;">GreenBeli Order Confirmation</h2>
@@ -217,4 +215,4 @@ module.exports = {
     sendEmergencyOtpEmail,
     sendEmailConfirmation,
     sendOrderConfirmationEmail
-}
+};

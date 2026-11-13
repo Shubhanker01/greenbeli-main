@@ -41,6 +41,10 @@ export async function getDashboardStatsApi() {
   return adminFetch("/admin/stats");
 }
 
+export async function getSalesAnalyticsApi(months = 12) {
+  return adminFetch(`/admin/sales-analytics?months=${months}`);
+}
+
 // Products Management
 export async function getAdminProductsApi(page, limit = 10, search = "") {
   try {
@@ -83,6 +87,21 @@ export async function addProductApi(formData, authStatus) {
 }
 
 export async function updateProductApi(id, productData) {
+  // If productData is a FormData (contains files), send it as multipart so
+  // images are uploaded. Otherwise fall back to JSON for plain-object callers.
+  const isFormData = productData instanceof FormData;
+  if (isFormData) {
+    const res = await fetch(`${BASE_URL}/products/${id}`, {
+      method: "PUT",
+      credentials: "include",
+      body: productData, // browser sets correct multipart Content-Type automatically
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.message || `Product update failed with status ${res.status}`);
+    }
+    return data;
+  }
   return await adminFetch(`/products/${id}`, {
     method: "PUT",
     body: JSON.stringify(productData),

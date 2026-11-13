@@ -211,16 +211,16 @@ export default function SingleProduct() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10 space-y-16 sm:space-y-24">
         
-        {/* Main Product Presentation (Consistent with Hero & Figma layout: No image card wrappers) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+        {/* Main Product Presentation */}
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10 xl:gap-14">
           
-          {/* Left: Pure Minimalist Image Showcase (No card wrapper, clean soft borders, seamless blend) */}
-          <div className="space-y-4">
-            <div className="relative aspect-[4/5] sm:aspect-[8/9] overflow-hidden rounded-md bg-emerald-100/60">
+          {/* Left: Pure Minimalist Image Showcase */}
+          <div className="space-y-4 w-full lg:w-[38%] lg:max-w-[460px] lg:shrink-0">
+            <div className="relative aspect-square sm:aspect-[4/5] lg:aspect-[3/4] overflow-hidden rounded-md bg-emerald-50">
               <img
                 src={resolveImageUrl(selectedImage)}
                 alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-105"
+                className="w-full h-full object-contain transition-transform duration-700 ease-out hover:scale-105"
               />
 
               {/* Status / Care tags (clean badges consistent with PlantCard) */}
@@ -274,7 +274,7 @@ export default function SingleProduct() {
           </div>
 
           {/* Right: Typography, Botanical Details, Express Actions */}
-          <div className="space-y-6 sm:space-y-8">
+          <div className="flex-1 space-y-6 sm:space-y-8 lg:py-2 lg:pl-4">
             
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -326,7 +326,7 @@ export default function SingleProduct() {
             </div>
 
             {/* Plant summary / description */}
-            <p className="text-base sm:text-lg text-stone-600 leading-relaxed">
+            <p className="text-base sm:text-lg lg:text-base text-stone-600 leading-relaxed max-w-prose">
               {product.shortDescription || product.description || "Grown with care by senior horticulturists, packed in breathable eco-transit boxes and potted in nutrient-rich organic soil ready for your home."}
             </p>
 

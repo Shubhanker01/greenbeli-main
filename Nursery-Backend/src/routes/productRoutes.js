@@ -35,7 +35,7 @@ router.get("/:id/reviews", fetchProductReviews);
 
 // admin write
 router.post('/add', requireAuth, productUpload.array("images", 8), productadd);
-router.put("/:id", requireAuth, updateProduct);
+router.put("/:id", requireAuth, productUpload.array("images", 8), updateProduct);
 router.delete(
   "/:id",
   requireAuth,
