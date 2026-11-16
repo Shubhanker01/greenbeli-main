@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ShoppingBag, Star, Eye, Check, Sun, Droplets, Plus } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { getResponsiveImageProps } from "../utils/api";
 
 // variant="minimal": Figma style (no card background, round "+" button on the photo).
 // Anything else (default): the original card, so other pages are unchanged.
@@ -15,7 +16,13 @@ export default function PlantCard({ product, variant = "default" }) {
   const [isAdded, setIsAdded] = useState(false);
 
   const isLiked = isInWishlist && product._id ? Boolean(isInWishlist(product._id)) : false;
-  const imageUrl = product.images?.[0] || product.image || "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=600&q=80";
+  const rawImageUrl = product.images?.[0] || product.image || "https://images.unsplash.com/photo-1545241047-6083a3684587?auto=format&fit=crop&w=600&q=80";
+  const imageProps = getResponsiveImageProps(rawImageUrl, {
+    widths: [320, 480, 640],
+    defaultWidth: 480,
+    quality: 80,
+    sizes: "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw",
+  });
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -47,9 +54,14 @@ export default function PlantCard({ product, variant = "default" }) {
         <div className="relative aspect-[8/9] overflow-hidden rounded-md bg-emerald-100/60">
           <Link to={detailsHref} aria-label={product.name}>
             <img
-              src={imageUrl}
+              src={imageProps.src}
+              srcSet={imageProps.srcSet}
+              sizes={imageProps.sizes}
               alt={product.name}
+              width={400}
+              height={450}
               loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
             />
           </Link>
@@ -136,10 +148,15 @@ export default function PlantCard({ product, variant = "default" }) {
       <div className="relative aspect-[4/5] sm:aspect-square bg-emerald-50/50 overflow-hidden">
         <Link to={`/products/${product.slug || product._id}`}>
           <img
-            src={imageUrl}
+            src={imageProps.src}
+            srcSet={imageProps.srcSet}
+            sizes={imageProps.sizes}
             alt={product.name}
+            width={400}
+            height={400}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
             loading="lazy"
+            decoding="async"
           />
         </Link>
 

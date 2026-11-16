@@ -24,6 +24,51 @@ export function resolveImageUrl(url) {
   return `${backendOrigin}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
+export function getResponsiveImageProps(rawUrl, {
+  widths = [360, 480, 720],
+  defaultWidth = 600,
+  quality = 80,
+  sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw"
+} = {}) {
+  const fullUrl = resolveImageUrl(rawUrl);
+
+  // If it's an Unsplash URL, generate optimized responsive srcset
+  if (fullUrl.includes("images.unsplash.com")) {
+    try {
+      const parsed = new URL(fullUrl);
+      parsed.searchParams.set("auto", "format");
+      parsed.searchParams.set("fit", "crop");
+      parsed.searchParams.set("q", quality.toString());
+
+      const srcSet = widths
+        .map((w) => {
+          const u = new URL(parsed.toString());
+          u.searchParams.set("w", w.toString());
+          return `${u.toString()} ${w}w`;
+        })
+        .join(", ");
+
+      const defaultParsed = new URL(parsed.toString());
+      defaultParsed.searchParams.set("w", defaultWidth.toString());
+
+      return {
+        src: defaultParsed.toString(),
+        srcSet,
+        sizes,
+      };
+    } catch {
+      // Fallback below
+    }
+  }
+
+  // Fallback for non-Unsplash or raw relative paths
+  return {
+    src: fullUrl,
+    srcSet: undefined,
+    sizes: undefined,
+  };
+}
+
 export async function fetchApi(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
   const config = {

@@ -84,10 +84,17 @@ export default function Hero() {
           <Reveal effect="rise" duration={0.9} delay={0.25} className="relative">
             <div className="group relative aspect-[4/3] lg:aspect-[6/5] overflow-hidden rounded-tl-[6rem] sm:rounded-tl-[9rem] lg:rounded-tl-[12rem] rounded-tr-lg rounded-b-lg shadow-2xl shadow-stone-900/15">
               <img
-                src="https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=1400&q=80"
+                src="https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=800&q=80"
+                srcSet="
+                  https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=480&q=80 480w,
+                  https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=768&q=80 768w,
+                  https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=1024&q=80 1024w,
+                  https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=1400&q=80 1400w
+                "
+                sizes="(min-width: 1280px) 580px, (min-width: 1024px) 45vw, 100vw"
                 alt="A healthy monstera plant in a bright, sunlit room"
-                width={1400}
-                height={1167}
+                width={700}
+                height={583}
                 fetchPriority="high"
                 className="w-full h-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
               />
