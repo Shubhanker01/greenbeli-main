@@ -7,6 +7,8 @@ import { SystemSettingProvider } from "./context/SystemSettingsContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
+import ScrollToTop from "./components/ScrollToTop";
+import ScrollToTopButton from "./components/ScrollToTopButton";
 
 // Lazy load route pages for code splitting and faster initial load
 const Home = lazy(() => import("./pages/Home"));
@@ -49,6 +51,7 @@ export default function App() {
       <AuthProvider>
         <CartProvider>
           <div className="min-h-screen flex flex-col justify-between bg-cream selection:bg-emerald-200 selection:text-emerald-950">
+            <ScrollToTop />
             <Navbar />
             <main className="flex-1">
               <Suspense fallback={<PageLoader />}>
@@ -85,6 +88,7 @@ export default function App() {
               </Suspense>
             </main>
             <CartDrawer />
+            <ScrollToTopButton />
             <Footer />
           </div>
         </CartProvider>

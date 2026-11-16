@@ -50,7 +50,7 @@ export default function Hero() {
               </p>
             </Reveal>
 
-            <Reveal className="flex flex-wrap items-center gap-x-6 gap-y-4 pt-1">
+            <Reveal effect="none" className="flex flex-wrap items-center gap-x-6 gap-y-4 pt-1">
               <a
                 href="#plant-quiz"
                 style={{ backgroundColor: GREEN }}
