@@ -30,6 +30,35 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useSystemSettings } from "../context/SystemSettingsContext";
 
+// Faint leaf veins behind the navbar: a midrib from the bottom-left tip to the top-right tip,
+// with side veins branching off it.
+const VEIN_POINTS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+const SIDE_VEINS = VEIN_POINTS.flatMap((t) => {
+  const x = 1000 * t;
+  const y = 100 * (1 - t);
+  return [
+    `M${x} ${y} L${x - 30} ${y - 60}`, // up-left
+    `M${x} ${y} L${x + 70} ${y + 18}`, // down-right
+  ];
+});
+
+function NavLeafVeins() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      viewBox="0 0 1000 100"
+      preserveAspectRatio="none"
+      fill="none"
+    >
+      <path d="M0 100 L1000 0" stroke="#6ee7b7" strokeOpacity="0.16" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+      {SIDE_VEINS.map((d) => (
+        <path key={d} d={d} stroke="#6ee7b7" strokeOpacity="0.09" strokeWidth="1" vectorEffect="non-scaling-stroke" strokeLinecap="round" />
+      ))}
+    </svg>
+  );
+}
+
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -114,264 +143,276 @@ export default function Navbar() {
         </div>
 
         {/* Main Glass Navbar */}
-        <nav className="glass-nav py-2.5 px-3 sm:px-8 transition-all">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-1.5 text-emerald-900 hover:text-emerald-700 focus:outline-none touch-active"
-              aria-label="Toggle Navigation"
+        <nav className="px-3 sm:px-8 pt-2 sm:pt-3 transition-all">
+          <div className="relative max-w-7xl mx-auto">
+            {/* Leaf-shaped green background (clipped on its own layer so the dropdowns below can overflow) */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 overflow-hidden bg-emerald-900 shadow-lg shadow-emerald-950/25
+                rounded-tl-[28px] rounded-br-[28px] rounded-tr-[6px] rounded-bl-[6px]
+                sm:rounded-tl-[40px] sm:rounded-br-[40px]"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-800 to-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-900/20 group-hover:scale-105 transition-transform duration-300">
-                <Sprout className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="serif-font text-xl sm:text-2xl font-bold text-emerald-950 tracking-tight leading-none group-hover:text-emerald-700 transition">
-                  GreenBeli
-                </span>
-                <span className="text-[8px] sm:text-[9px] tracking-widest text-emerald-700 uppercase font-semibold">
-                  Nursery & Botanical
-                </span>
-              </div>
-            </Link>
-
-            {/* Streamlined Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-700">
-              {/* 1. Home */}
-              <Link
-                to="/"
-                className={`transition-colors py-2 relative hover:text-emerald-700 ${location.pathname === "/" ? "text-emerald-800 font-semibold" : ""
-                  }`}
-              >
-                Home
-                {location.pathname === "/" && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600 rounded-full" />
-                )}
-              </Link>
-
-              {/* 2. Direct "All Plants" Link */}
-              <Link
-                to="/products"
-                className={`transition-colors py-2 relative hover:text-emerald-700 ${location.pathname === "/products" ? "text-emerald-800 font-semibold" : ""
-                  }`}
-              >
-                All Plants
-                {location.pathname === "/products" && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600 rounded-full" />
-                )}
-              </Link>
-
-              {/* 3. Categories Dropdown */}
-              <div
-                ref={shopDropdownRef}
-                className="relative"
-                onMouseEnter={() => setIsShopDropdownOpen(true)}
-                onMouseLeave={() => setIsShopDropdownOpen(false)}
-              >
-                <button
-                  onClick={() => navigate("/products")}
-                  className={`flex items-center gap-1 py-2 transition-colors hover:text-emerald-700 ${location.pathname.startsWith("/category") ? "text-emerald-800 font-semibold" : ""
-                    }`}
-                >
-                  Categories
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isShopDropdownOpen ? "rotate-180 text-emerald-600" : "text-slate-400"}`} />
-                </button>
-
-                {/* Dropdown Panel */}
-                {isShopDropdownOpen && (
-                  <div className="absolute top-full -left-4 mt-1 w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 grid grid-cols-1 gap-1 z-50 animate-fade-in">
-                    <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">Plant & Garden Categories</span>
-                      <Link to="/products" onClick={() => setIsShopDropdownOpen(false)} className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full hover:bg-emerald-200 transition">
-                        View All
-                      </Link>
-                    </div>
-                    {shopCategories.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.name}
-                          to={item.path}
-                          onClick={() => setIsShopDropdownOpen(false)}
-                          className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-emerald-50/80 transition group"
-                        >
-                          <div className="p-2 rounded-lg bg-emerald-100/70 text-emerald-800 group-hover:bg-emerald-700 group-hover:text-white transition">
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">{item.name}</p>
-                            <p className="text-[11px] text-slate-500 leading-tight">{item.desc}</p>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* 4. Landscaping Proposals */}
-              <Link
-                to="/proposals"
-                className={`transition-colors py-2 relative flex items-center gap-1.5 hover:text-emerald-700 ${location.pathname === "/proposals" ? "text-emerald-800 font-semibold" : ""
-                  }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                Landscaping
-                {location.pathname === "/proposals" && (
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600 rounded-full" />
-                )}
-              </Link>
-
-              {/* 5. Explore Dropdown */}
-              <div
-                ref={exploreDropdownRef}
-                className="relative"
-                onMouseEnter={() => setIsExploreDropdownOpen(true)}
-                onMouseLeave={() => setIsExploreDropdownOpen(false)}
-              >
-                <button
-                  onClick={() => setIsExploreDropdownOpen(!isExploreDropdownOpen)}
-                  className={`flex items-center gap-1 py-2 transition-colors hover:text-emerald-700 ${["/gallery", "/testimonials", "/about", "/contact"].includes(location.pathname)
-                      ? "text-emerald-800 font-semibold"
-                      : ""
-                    }`}
-                >
-                  Explore
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExploreDropdownOpen ? "rotate-180 text-emerald-600" : "text-slate-400"}`} />
-                </button>
-
-                {isExploreDropdownOpen && (
-                  <div className="absolute top-full -left-4 mt-1 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 grid grid-cols-1 gap-1 z-50 animate-fade-in">
-                    {exploreLinks.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.name}
-                          to={item.path}
-                          onClick={() => setIsExploreDropdownOpen(false)}
-                          className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-emerald-50/80 transition group"
-                        >
-                          <div className="p-2 rounded-lg bg-emerald-100/70 text-emerald-800 group-hover:bg-emerald-700 group-hover:text-white transition">
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">{item.name}</p>
-                            <p className="text-[11px] text-slate-500 leading-tight">{item.desc}</p>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <NavLeafVeins />
             </div>
 
-            {/* Action Icons */}
-            <div className="flex items-center gap-1.5 sm:gap-3">
-              {/* Search Trigger */}
+            <div className="relative flex items-center justify-between px-5 sm:px-10 py-2.5">
+
+              {/* Mobile Menu Button */}
               <button
-                onClick={() => setIsSearchOpen(true)}
-                className="p-1.5 sm:p-2 text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition touch-active"
-                title="Search Plants"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden p-1.5 text-white hover:text-emerald-200 focus:outline-none touch-active"
+                aria-label="Toggle Navigation"
               >
-                <Search className="w-5 h-5" />
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
 
-              {/* Wishlist */}
-              <Link
-                to="/profile?tab=wishlist"
-                className="relative p-1.5 sm:p-2 text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition hidden sm:inline-flex"
-                title="Wishlist"
-              >
-                <Heart className="w-5 h-5" />
-                {wishlist && wishlist.length > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">
-                    {wishlist.length}
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-2 group">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-900 shadow-md shadow-emerald-950/30 group-hover:scale-105 transition-transform duration-300">
+                  <Sprout className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="serif-font text-xl sm:text-2xl font-bold text-white tracking-tight leading-none group-hover:text-emerald-200 transition">
+                    GreenBeli
                   </span>
-                )}
+                  <span className="text-[8px] sm:text-[9px] tracking-widest text-emerald-300 uppercase font-semibold">
+                    Nursery & Botanical
+                  </span>
+                </div>
               </Link>
 
-              {/* Cart Trigger */}
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="relative p-1.5 sm:p-2 text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 rounded-full transition flex items-center gap-1.5 touch-active"
-                title="Shopping Bag"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                {totalItems > 0 && (
-                  <span className="bg-emerald-700 text-white rounded-full text-[10px] font-bold px-1.5 py-0.5 shadow">
-                    {totalItems}
-                  </span>
-                )}
-              </button>
+              {/* Streamlined Desktop Navigation Links */}
+              <div className="hidden lg:flex items-center gap-7 text-sm font-medium text-emerald-50/90">
+                {/* 1. Home */}
+                <Link
+                  to="/"
+                  className={`transition-colors py-2 relative hover:text-white ${location.pathname === "/" ? "text-white font-semibold" : ""
+                    }`}
+                >
+                  Home
+                  {location.pathname === "/" && (
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-300 rounded-full" />
+                  )}
+                </Link>
 
-              {/* Profile Menu */}
-              <div ref={profileDropdownRef} className="relative">
-                {isAuthenticated ? (
-                  <div className="relative">
-                    <button
-                      onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                      className="flex items-center gap-2 p-1.5 pl-2.5 sm:pl-3 border border-emerald-200 rounded-full hover:bg-emerald-50 transition text-emerald-950 font-medium text-xs shadow-xs touch-active"
-                    >
-                      <span className="w-6 h-6 rounded-full bg-emerald-800 text-white flex items-center justify-center text-xs font-bold uppercase">
-                        {user?.name ? user.name[0] : "U"}
-                      </span>
-                      <span
-                        className="hidden sm:inline max-w-[130px] lg:max-w-[160px] truncate"
-                        title={user?.email || user?.name || "Account"}
-                      >
-                        {user?.email || user?.name || "Account"}
-                      </span>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
-                    </button>
+                {/* 2. Direct "All Plants" Link */}
+                <Link
+                  to="/products"
+                  className={`transition-colors py-2 relative hover:text-white ${location.pathname === "/products" ? "text-white font-semibold" : ""
+                    }`}
+                >
+                  All Plants
+                  {location.pathname === "/products" && (
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-300 rounded-full" />
+                  )}
+                </Link>
 
-                    {isProfileDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-fade-in">
-                        <div className="px-4 py-2 border-b border-slate-100">
-                          <p className="text-xs font-bold text-slate-900">{user?.name}</p>
-                          <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
-                        </div>
-                        <Link
-                          to="/profile"
-                          onClick={() => setIsProfileDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition"
-                        >
-                          <User className="w-4 h-4 text-emerald-600" /> My Profile
-                        </Link>
-                        <Link
-                          to="/orders"
-                          onClick={() => setIsProfileDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition"
-                        >
-                          <PackageCheck className="w-4 h-4 text-emerald-600" /> My Orders
-                        </Link>
-                        <button
-                          onClick={() => {
-                            logout();
-                            setIsProfileDropdownOpen(false);
-                            navigate("/");
-                          }}
-                          className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition border-t border-slate-100"
-                        >
-                          <LogOut className="w-4 h-4" /> Sign Out
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Link
-                    to="/login"
-                    className="bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold shadow-md shadow-emerald-900/10 flex items-center gap-1 transition duration-300 touch-active"
+                {/* 3. Categories Dropdown */}
+                <div
+                  ref={shopDropdownRef}
+                  className="relative"
+                  onMouseEnter={() => setIsShopDropdownOpen(true)}
+                  onMouseLeave={() => setIsShopDropdownOpen(false)}
+                >
+                  <button
+                    onClick={() => navigate("/products")}
+                    className={`flex items-center gap-1 py-2 transition-colors hover:text-white ${location.pathname.startsWith("/category") ? "text-white font-semibold" : ""
+                      }`}
                   >
-                    <User className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Sign In</span>
-                  </Link>
-                )}
+                    Categories
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isShopDropdownOpen ? "rotate-180 text-emerald-200" : "text-emerald-300/70"}`} />
+                  </button>
+
+                  {/* Dropdown Panel */}
+                  {isShopDropdownOpen && (
+                    <div className="absolute top-full -left-4 mt-1 w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 grid grid-cols-1 gap-1 z-50 animate-fade-in">
+                      <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">Plant & Garden Categories</span>
+                        <Link to="/products" onClick={() => setIsShopDropdownOpen(false)} className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full hover:bg-emerald-200 transition">
+                          View All
+                        </Link>
+                      </div>
+                      {shopCategories.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.name}
+                            to={item.path}
+                            onClick={() => setIsShopDropdownOpen(false)}
+                            className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-emerald-50/80 transition group"
+                          >
+                            <div className="p-2 rounded-lg bg-emerald-100/70 text-emerald-800 group-hover:bg-emerald-700 group-hover:text-white transition">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">{item.name}</p>
+                              <p className="text-[11px] text-slate-500 leading-tight">{item.desc}</p>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Landscaping Proposals */}
+                <Link
+                  to="/proposals"
+                  className={`transition-colors py-2 relative flex items-center gap-1.5 hover:text-white ${location.pathname === "/proposals" ? "text-white font-semibold" : ""
+                    }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  Landscaping
+                  {location.pathname === "/proposals" && (
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-300 rounded-full" />
+                  )}
+                </Link>
+
+                {/* 5. Explore Dropdown */}
+                <div
+                  ref={exploreDropdownRef}
+                  className="relative"
+                  onMouseEnter={() => setIsExploreDropdownOpen(true)}
+                  onMouseLeave={() => setIsExploreDropdownOpen(false)}
+                >
+                  <button
+                    onClick={() => setIsExploreDropdownOpen(!isExploreDropdownOpen)}
+                    className={`flex items-center gap-1 py-2 transition-colors hover:text-white ${["/gallery", "/testimonials", "/about", "/contact"].includes(location.pathname)
+                      ? "text-white font-semibold"
+                      : ""
+                      }`}
+                  >
+                    Explore
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExploreDropdownOpen ? "rotate-180 text-emerald-200" : "text-emerald-300/70"}`} />
+                  </button>
+
+                  {isExploreDropdownOpen && (
+                    <div className="absolute top-full -left-4 mt-1 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 p-3 grid grid-cols-1 gap-1 z-50 animate-fade-in">
+                      {exploreLinks.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.name}
+                            to={item.path}
+                            onClick={() => setIsExploreDropdownOpen(false)}
+                            className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-emerald-50/80 transition group"
+                          >
+                            <div className="p-2 rounded-lg bg-emerald-100/70 text-emerald-800 group-hover:bg-emerald-700 group-hover:text-white transition">
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-800 group-hover:text-emerald-900">{item.name}</p>
+                              <p className="text-[11px] text-slate-500 leading-tight">{item.desc}</p>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Icons */}
+              <div className="flex items-center gap-1.5 sm:gap-3">
+                {/* Search Trigger */}
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-1.5 sm:p-2 text-emerald-50 hover:text-white hover:bg-white/10 rounded-full transition touch-active"
+                  title="Search Plants"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+
+                {/* Wishlist */}
+                <Link
+                  to="/profile?tab=wishlist"
+                  className="relative p-1.5 sm:p-2 text-emerald-50 hover:text-white hover:bg-white/10 rounded-full transition hidden sm:inline-flex"
+                  title="Wishlist"
+                >
+                  <Heart className="w-5 h-5" />
+                  {wishlist && wishlist.length > 0 && (
+                    <span className="absolute top-0 right-0 w-4 h-4 bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">
+                      {wishlist.length}
+                    </span>
+                  )}
+                </Link>
+
+                {/* Cart Trigger */}
+                <button
+                  onClick={() => setIsCartOpen(true)}
+                  className="relative p-1.5 sm:p-2 text-emerald-50 hover:text-white hover:bg-white/10 rounded-full transition flex items-center gap-1.5 touch-active"
+                  title="Shopping Bag"
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  {totalItems > 0 && (
+                    <span className="bg-amber-400 text-emerald-950 rounded-full text-[10px] font-bold px-1.5 py-0.5 shadow">
+                      {totalItems}
+                    </span>
+                  )}
+                </button>
+
+                {/* Profile Menu */}
+                <div ref={profileDropdownRef} className="relative">
+                  {isAuthenticated ? (
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                        className="flex items-center gap-2 p-1.5 pl-2.5 sm:pl-3 border border-emerald-300/40 rounded-full hover:bg-white/10 transition text-white font-medium text-xs shadow-xs touch-active"
+                      >
+                        <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center text-xs font-bold uppercase">
+                          {user?.name ? user.name[0] : "U"}
+                        </span>
+                        <span
+                          className="hidden sm:inline max-w-[130px] lg:max-w-[160px] truncate"
+                          title={user?.email || user?.name || "Account"}
+                        >
+                          {user?.email || user?.name || "Account"}
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 text-emerald-300 hidden sm:inline" />
+                      </button>
+
+                      {isProfileDropdownOpen && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-fade-in">
+                          <div className="px-4 py-2 border-b border-slate-100">
+                            <p className="text-xs font-bold text-slate-900">{user?.name}</p>
+                            <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+                          </div>
+                          <Link
+                            to="/profile"
+                            onClick={() => setIsProfileDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition"
+                          >
+                            <User className="w-4 h-4 text-emerald-600" /> My Profile
+                          </Link>
+                          <Link
+                            to="/orders"
+                            onClick={() => setIsProfileDropdownOpen(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition"
+                          >
+                            <PackageCheck className="w-4 h-4 text-emerald-600" /> My Orders
+                          </Link>
+                          <button
+                            onClick={() => {
+                              logout();
+                              setIsProfileDropdownOpen(false);
+                              navigate("/");
+                            }}
+                            className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition border-t border-slate-100"
+                          >
+                            <LogOut className="w-4 h-4" /> Sign Out
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Link
+                      to="/login"
+                      className="bg-emerald-50 hover:bg-white text-emerald-950 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold shadow-md shadow-emerald-950/20 flex items-center gap-1 transition duration-300 touch-active"
+                    >
+                      <User className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Sign In</span>
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
           </div>
