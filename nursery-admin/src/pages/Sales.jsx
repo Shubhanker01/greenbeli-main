@@ -33,20 +33,6 @@ const CustomTooltip = ({ active, payload, label }) => {
           <span>Delivered Orders:</span>
           <span>{formatCurrency(payload[0]?.value)}</span>
         </p>
-        {payload[1] && (
-          <p className="text-indigo-600 font-semibold flex items-center justify-between gap-4">
-            <span>POS Sales:</span>
-            <span>{formatCurrency(payload[1]?.value)}</span>
-          </p>
-        )}
-        <div className="border-t border-slate-100 pt-1 mt-1 text-slate-900 font-extrabold flex items-center justify-between gap-4">
-          <span>Total Monthly:</span>
-          <span>
-            {formatCurrency(
-              (Number(payload[0]?.value) || 0) + (Number(payload[1]?.value) || 0)
-            )}
-          </span>
-        </div>
       </div>
     );
   }
@@ -127,7 +113,7 @@ export default function Sales() {
       )}
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Delivered Revenue */}
         <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
@@ -169,27 +155,7 @@ export default function Sales() {
           </div>
         </div>
 
-        {/* Total Sales All Over */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Total Sales All Over
-            </span>
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
-              <Layers className="w-5 h-5" />
-            </div>
-          </div>
-          <div>
-            <h3 className="serif-font text-3xl font-extrabold text-slate-900">
-              {loading ? "…" : (summary.totalSalesAll ?? 0).toLocaleString("en-IN")}
-            </h3>
-            <p className="text-[11px] font-medium text-slate-400 mt-1">
-              {summary.totalOrders ?? 0} Orders + {summary.posSales ?? 0} POS Counter Sales
-            </p>
-          </div>
-        </div>
-
-        {/* Total Cumulative Revenue */}
+        {/* Total Gross Revenue */}
         <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -201,10 +167,10 @@ export default function Sales() {
           </div>
           <div>
             <h3 className="serif-font text-3xl font-extrabold text-slate-900">
-              {loading ? "…" : formatCurrency(summary.totalRevenue)}
+              {loading ? "…" : formatCurrency(summary.orderRevenue ?? summary.totalRevenue)}
             </h3>
             <p className="text-[11px] font-medium text-slate-400 mt-1">
-              Delivered Orders + POS Counter Sales
+              Delivered Store Orders
             </p>
           </div>
         </div>
@@ -218,7 +184,7 @@ export default function Sales() {
               Revenue Growth Over Time
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Monthly revenue breakdown from delivered customer orders and retail POS sales.
+              Monthly revenue breakdown from delivered customer orders.
             </p>
           </div>
 
@@ -226,10 +192,6 @@ export default function Sales() {
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-emerald-600 inline-block" />
               <span className="text-slate-600">Delivered Orders</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-indigo-500 inline-block" />
-              <span className="text-slate-600">POS Sales</span>
             </div>
           </div>
         </div>
@@ -252,10 +214,6 @@ export default function Sales() {
                   <linearGradient id="orderRevenueGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#059669" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#059669" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="posRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -280,15 +238,6 @@ export default function Sales() {
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#orderRevenueGrad)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="posRevenue"
-                  name="POS Sales"
-                  stroke="#6366f1"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#posRevenueGrad)"
                 />
               </AreaChart>
             </ResponsiveContainer>

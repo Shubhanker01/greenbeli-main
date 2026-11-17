@@ -8,7 +8,6 @@ import {
   TrendingUp,
   Plus,
   ArrowUpRight,
-  Receipt,
   Users,
   FileText,
   Star,
@@ -197,14 +196,13 @@ export default function Dashboard() {
 
   // Derived financial & growth stats
   const totalGrossRevenue = useMemo(() => {
-    if (analytics?.summary?.totalRevenue != null) {
-      return analytics.summary.totalRevenue;
+    if (analytics?.summary?.orderRevenue != null) {
+      return analytics.summary.orderRevenue;
     }
-    return stats?.totalRevenue ?? 0;
+    return stats?.orderRevenue ?? 0;
   }, [analytics, stats]);
 
   const totalDeliveredRevenue = analytics?.summary?.orderRevenue ?? stats?.orderRevenue ?? 0;
-  const totalPosRevenue = analytics?.summary?.posRevenue ?? stats?.salesRevenue ?? 0;
 
   // Chart datasets
   const revenueChartData = useMemo(() => {
@@ -213,12 +211,12 @@ export default function Dashboard() {
     }
     // Fallback placeholder data if analytics is empty
     return [
-      { month: "Nov", orderRevenue: 12000, posRevenue: 8500, totalRevenue: 20500, orderCount: 14, posCount: 9 },
-      { month: "Dec", orderRevenue: 18500, posRevenue: 11200, totalRevenue: 29700, orderCount: 22, posCount: 15 },
-      { month: "Jan", orderRevenue: 16000, posRevenue: 14000, totalRevenue: 30000, orderCount: 19, posCount: 18 },
-      { month: "Feb", orderRevenue: 24500, posRevenue: 16800, totalRevenue: 41300, orderCount: 31, posCount: 24 },
-      { month: "Mar", orderRevenue: 29000, posRevenue: 19500, totalRevenue: 48500, orderCount: 38, posCount: 29 },
-      { month: "Apr", orderRevenue: 34000, posRevenue: 22000, totalRevenue: 56000, orderCount: 45, posCount: 32 },
+      { month: "Nov", orderRevenue: 12000, totalRevenue: 12000, orderCount: 14 },
+      { month: "Dec", orderRevenue: 18500, totalRevenue: 18500, orderCount: 22 },
+      { month: "Jan", orderRevenue: 16000, totalRevenue: 16000, orderCount: 19 },
+      { month: "Feb", orderRevenue: 24500, totalRevenue: 24500, orderCount: 31 },
+      { month: "Mar", orderRevenue: 29000, totalRevenue: 29000, orderCount: 38 },
+      { month: "Apr", orderRevenue: 34000, totalRevenue: 34000, orderCount: 45 },
     ];
   }, [analytics]);
 
@@ -242,7 +240,6 @@ export default function Dashboard() {
     return revenueChartData.map((d) => ({
       month: d.month,
       "Online Orders": d.orderCount || 0,
-      "POS Sales": d.posCount || 0,
     }));
   }, [revenueChartData]);
 
@@ -290,12 +287,6 @@ export default function Dashboard() {
           >
             <Plus className="w-4 h-4" /> Add Plant
           </Link>
-          <Link
-            to="/sales"
-            className="bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 text-xs font-bold px-4 py-2.5 rounded-2xl transition flex items-center gap-1.5 shadow-sm"
-          >
-            <Receipt className="w-4 h-4 text-emerald-700" /> POS Counter
-          </Link>
         </div>
       </div>
 
@@ -306,7 +297,7 @@ export default function Dashboard() {
       )}
 
       {/* Financial Highlight Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-gradient-to-br from-emerald-900 to-teal-950 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden flex flex-col justify-between">
           <div className="absolute right-0 top-0 -mt-6 -mr-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
           <div className="flex items-center justify-between relative z-10">
@@ -323,7 +314,7 @@ export default function Dashboard() {
             </h3>
             <p className="text-xs text-emerald-200/80 mt-1.5 flex items-center gap-1 font-medium">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-300" />
-              Online Orders + POS In-Store Sales
+              Delivered Store Orders
             </p>
           </div>
         </div>
@@ -351,30 +342,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col justify-between transition hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              POS Retail Counter
-            </span>
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
-              <Receipt className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="serif-font text-3xl font-bold text-slate-900">
-              {loading ? "…" : `₹${totalPosRevenue.toLocaleString("en-IN")}`}
-            </h3>
-            <div className="flex items-center justify-between mt-1.5">
-              <span className="text-xs font-bold text-amber-600 flex items-center gap-1">
-                {analytics?.summary?.posSales ?? stats?.salesCount ?? 0} In-Person Transactions
-              </span>
-              <Link to="/sales" className="text-xs font-semibold text-slate-400 hover:text-amber-600 flex items-center gap-0.5">
-                Open POS <ArrowUpRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Visual Analytics with Recharts */}
@@ -390,7 +357,7 @@ export default function Dashboard() {
                 </h3>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Delivered eCommerce orders vs. retail POS sales over the selected timeline.
+                Delivered eCommerce orders revenue over the selected timeline.
               </p>
             </div>
 
@@ -398,10 +365,6 @@ export default function Dashboard() {
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-emerald-600" />
                 <span className="text-slate-600">Online Store</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-indigo-500" />
-                <span className="text-slate-600">POS Retail</span>
               </div>
             </div>
           </div>
@@ -413,10 +376,6 @@ export default function Dashboard() {
                   <linearGradient id="orderGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#059669" stopOpacity={0.35} />
                     <stop offset="95%" stopColor="#059669" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="posGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -441,15 +400,6 @@ export default function Dashboard() {
                   strokeWidth={2.5}
                   fillOpacity={1}
                   fill="url(#orderGrad)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="posRevenue"
-                  name="POS Retail"
-                  stroke="#6366f1"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#posGrad)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -526,7 +476,7 @@ export default function Dashboard() {
               Transaction Volume & Order Distribution
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Monthly quantity of website customer orders alongside direct nursery sales.
+              Monthly quantity of website customer orders.
             </p>
           </div>
 
@@ -534,10 +484,6 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-indigo-600" />
               <span className="text-slate-600">Online Orders</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-emerald-500" />
-              <span className="text-slate-600">POS Retail</span>
             </div>
           </div>
         </div>
@@ -560,7 +506,6 @@ export default function Dashboard() {
               />
               <Tooltip content={<CustomChartTooltip />} />
               <Bar dataKey="Online Orders" fill="#6366f1" radius={[6, 6, 0, 0]} maxBarSize={36} />
-              <Bar dataKey="POS Sales" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
         </div>
